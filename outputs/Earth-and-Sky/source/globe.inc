@@ -112,7 +112,7 @@ void GlobeView::paint(QPainter* p) {
     if(!mSky || width()<2 || height()<2)return;
     p->setRenderHint(QPainter::Antialiasing);p->setRenderHint(QPainter::SmoothPixmapTransform);
     const double r=radius();const QPointF center(width()/2,height()/2);
-    p->setPen(QPen(QColor(67,91,112,75),.7));p->setBrush(Qt::NoBrush);if(!mHorizon)p->drawEllipse(center,r*shell,r*shell);
+    p->setPen(QPen(QColor(67,91,112,75),.7));p->setBrush(Qt::NoBrush);if(!mHorizon && layer("allConstellations"))p->drawEllipse(center,r*shell,r*shell);
     paintSky(p,false);
     if(mDirty || mGround.isNull()) {
         mGroundRect=QRectF(center.x()-r,center.y()-r,2*r,2*r).intersected(QRectF(0,0,width(),height()));

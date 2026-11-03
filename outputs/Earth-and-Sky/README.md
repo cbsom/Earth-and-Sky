@@ -53,7 +53,7 @@ The dropdown combines all previous time and speed choices without duplicates: **
 
 Changing the interval during playback keeps time continuous and preserves the mode and direction. Changing **Rotate Sky / Rotate Earth** pauses playback and preserves the displayed time and camera orientation. Returning to Rotate Sky restores the Earth-fixed reference frame, so Earth does not keep moving accidentally.
 
-**Full map / Full globe** fits the current view and clears My Horizon without changing time. **Reset** stops playback, returns to current live time, chooses Rotate Sky, and fits the current view. Layer switches, displayed time, and selected-location coordinates remain shared between both views. Modes, intervals, and playback state are not saved between launches; layer switches are saved independently.
+**Full map / Full globe** fits the current view and clears My Horizon without changing time. **Reset** stops playback, returns to current live time, chooses Rotate Sky, and centers the current view on your saved home city (or fits it if none is set). Layer switches, displayed time, and selected-location coordinates remain shared between both views. The Flat map/Globe choice and home city are saved alongside layer switches. Rotation modes, intervals, and playback state are not saved between launches.
 
 The footer stays at the bottom in normal, maximized, and full-screen windows.
 The map fills the area above it; controls stack on narrower windows.
@@ -62,7 +62,7 @@ The map fills the area above it; controls stack on narrower windows.
 
 Use the **scroll wheel** to zoom in or out in either view, including My Horizon and during playback. In the flat map, zoom ranges from 1x to 8x and follows the pointer; drag to pan, with seamless longitude wrapping and limits at the poles. In Globe view, zoom ranges from 0.65x to 6x around the globe center; left-drag turns the scene. Body markers and labels remain readable while zooming.
 
-Clicking selects a geographic location for My Horizon; it does not zoom. Clicking a Sun, Moon, or planet marker selects the map location beneath it. The current zoom level is retained. Zooming out to 1x keeps My Horizon active. Use the single **Full map** button in the footer to clear the selected horizon and show the whole world without changing the displayed time. **Reset** returns to the current live time and full map and stops playback.
+Clicking selects a geographic location for My Horizon; it does not zoom. Clicking a Sun, Moon, or planet marker selects the map location beneath it. The current zoom level is retained. Zooming out to 1x keeps My Horizon active. Use the single **Full map** button in the footer to clear the selected horizon and show the whole world without changing the displayed time. **Reset** returns to the current live time, centers your home city if set, and stops playback.
 
 ### My Horizon
 
@@ -86,7 +86,7 @@ Earth is opaque and hides objects behind its disk. Ground imagery retains the sa
 
 Click Earth's surface to select a My Horizon location. The selected location and footer coordinates are shared with the flat map. In Globe view, celestial objects, stars, lines, and constellation names below the selected geometric horizon are completely hidden, with line segments clipped at the horizon. The corresponding part of Earth is strongly faded but remains visible. You can still drag and zoom while My Horizon is active.
 
-**Full globe** fits and reorients the globe and clears My Horizon, keeping the displayed time. **Reset** also returns to current live time and stops playback, while retaining your selected view. Switching back to Flat map keeps its own zoom and camera position. View and camera choices are not saved across launches; the app starts with the flat map.
+**Full globe** fits and reorients the globe and clears My Horizon, keeping the displayed time. **Reset** also returns to current live time and stops playback, while retaining your selected view. Switching back to Flat map keeps its own zoom and camera position. The app starts in Globe view on first launch, with the globe filling about 95% of the map section’s smaller dimension. Subsequent launches restore your last Flat map/Globe choice and center your saved home city. Camera zoom and manually selected locations are not saved.
 
 To launch directly in Globe view, pass `--globe`. This can be combined with `--capture` for a globe screenshot. No additional Qt module, network service, or runtime asset download is required.
 
@@ -178,3 +178,9 @@ Qt is dynamically linked. Qt's applicable open-source licenses and notices are
 included in `app/licenses/` when packaged. Qt source is available from
 https://download.qt.io/archive/qt/6.8/6.8.3/single/ .
 The application may be rebuilt to use modified compatible Qt libraries.
+
+### Home city
+
+Choose **Home city…** at the upper right, then search by city or country and select a result. The city and coordinates are saved with your preferences. Opening the app and pressing **Reset** center this city without enabling My Horizon; Reset also returns to current time and stops playback. **Clear home** removes this preference. **Full map / Full globe** still fits the entire view independently.
+
+City choices come from the bundled `source/assets/worldcities_list.csv`; no network connection is required. The outer celestial-sphere outline in Globe view is shown only when **All constellations** is enabled, and remains hidden in My Horizon.

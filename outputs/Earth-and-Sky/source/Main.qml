@@ -11,7 +11,23 @@ Window {
     visible: true
     title: "Earth & Sky"
     color: "#080f18"
-    property bool globeMode: false
+    property bool globeMode: true
+    property bool preferencesReady: false
+    property var homeCity: ({})
+    onGlobeModeChanged: { if (preferencesReady) sky.saveGlobeMode(globeMode) }
+    function centerHome() {
+        mapViewport.fitMap(); globe.fitView()
+        if (homeCity.name) {
+            mapViewport.beginFollow("place", (homeCity.longitude + 180) / 360, (90 - homeCity.latitude) / 180, "", 1)
+            globe.centerOn(homeCity.longitude, homeCity.latitude)
+        }
+    }
+    Component.onCompleted: {
+        homeCity = sky.setting("homeCity", {})
+        globeMode = sky.savedGlobeMode()
+        preferencesReady = true
+        centerHome()
+    }
     readonly property var skyModel: sky
     function showEarthFrom(body) {
         mapViewport.horizonActive = false
@@ -22,7 +38,7 @@ Window {
     }
     onClosing: sky.stopAnimation()
     onVisibleChanged: { if (!visible) sky.stopAnimation() }
-    Shortcut { sequence: "Escape"; enabled: !intervalMenu.visible; onActivated: sky.stopAnimation() }
+    Shortcut { sequence: "Escape"; enabled: !intervalMenu.visible && !cityDialog.visible; onActivated: sky.stopAnimation() }
 
     Connections {
         target: sky
@@ -387,6 +403,53 @@ Window {
                 if (mapViewport.horizonActive) globe.centerOn(mapViewport.observerLongitude * 360 - 180, mapViewport.observerLatitude)
             }
         }
+    }
+    Rectangle {
+        anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 10
+        width: 100; height: 28; radius: 6; z: 20
+        color: "#dd101d29"; border.color: "#344754"
+        TimeAction {
+            anchors.fill: parent; objectName: "homeCityButton"; label: "Home city…"
+            description: window.homeCity.name ? "Home: " + window.homeCity.name : "Choose your home city"
+            onTriggered: { cityDialog.visible = true; citySearch.forceActiveFocus() }
+        }
+    }
+    Rectangle {
+        id: cityDialog; objectName: "homeCityDialog"; anchors.fill: parent; z: 100; visible: false; color: "#b0080f18"
+        MouseArea { anchors.fill: parent; onClicked: cityDialog.visible = false }
+        Rectangle {
+            anchors.centerIn: parent; width: Math.min(440, window.width - 32); height: Math.min(440, window.height - 32)
+            radius: 10; color: "#142330"; border.color: "#496779"
+            MouseArea { anchors.fill: parent }
+            Text { x: 18; y: 16; text: "Home city"; color: "#d5e3ee"; font.pixelSize: 18 }
+            Text { x: 18; y: 44; text: "Center here on opening and Reset"; color: "#99bdce"; font.pixelSize: 12 }
+            Rectangle {
+                x: 18; y: 72; width: parent.width - 36; height: 36; radius: 5; color: "#080f18"; border.color: "#496779"
+                TextInput {
+                    id: citySearch; objectName: "citySearch"; anchors.fill: parent; anchors.margins: 8
+                    color: "#e1edf5"; font.pixelSize: 14; clip: true; selectByMouse: true
+                    onTextChanged: cityResults.model = sky.findCities(text)
+                    Keys.onEscapePressed: cityDialog.visible = false
+                }
+                Text { anchors.fill: parent; anchors.margins: 8; visible: !citySearch.text && !citySearch.activeFocus; text: "Search city or country"; color: "#8197aa" }
+            }
+            ListView {
+                id: cityResults; objectName: "cityResults"; x: 18; y: 116; width: parent.width - 36; height: parent.height - 164
+                clip: true; model: sky.findCities("")
+                delegate: Rectangle {
+                    required property var modelData
+                    width: cityResults.width; height: 34; radius: 4; color: cityHit.containsMouse ? "#294252" : "transparent"
+                    Text { anchors.fill: parent; anchors.margins: 7; text: modelData.name; color: "#d5e3ee"; font.pixelSize: 13; elide: Text.ElideRight }
+                    MouseArea { id: cityHit; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: { window.homeCity = modelData; sky.saveHomeCity(modelData.name, modelData.latitude, modelData.longitude); window.centerHome(); cityDialog.visible = false }
+                    }
+                }
+                Text { anchors.centerIn: parent; visible: cityResults.count === 0; text: "No matching cities"; color: "#99bdce" }
+            }
+            TimeAction { x: 18; y: parent.height - 40; width: 100; height: 30; label: "Clear home"; onTriggered: { window.homeCity = ({}); sky.saveHomeCity("", 0, 0); window.centerHome(); cityDialog.visible = false } }
+            TimeAction { x: parent.width - 88; y: parent.height - 40; width: 70; height: 30; label: "Close"; onTriggered: cityDialog.visible = false }
+        }
+        Shortcut { sequence: "Escape"; enabled: cityDialog.visible; onActivated: cityDialog.visible = false }
     }
     Text {
         visible: window.globeMode
@@ -802,9 +865,9 @@ Window {
                     objectName: "resetButton"
                     anchors.fill: parent
                     label: "\u21bb  Reset"
-                    description: "Reset to the current time and full map, and stop playback"
+                    description: "Reset to the current time and home city, and stop playback"
                     highlighted: sky.live
-                    onTriggered: { sky.goToNow(); mapViewport.fitMap(); globe.fitView(); intervalMenu.visible = false }
+                    onTriggered: { sky.goToNow(); window.centerHome(); intervalMenu.visible = false }
                 }
             }
         }

@@ -503,6 +503,49 @@ public:
         if(initialStep && playbackStep>=86164090) { if(!advanceTime(direction,unit)) stopAnimation(); }
         else emit changed();
     }
+    Q_INVOKABLE QVariant setting(const QString& key, const QVariant& fallback) const { return settings.value("view/"+key,fallback); }
+    Q_INVOKABLE void saveSetting(const QString& key,const QVariant& value) { settings.setValue("view/"+key,value); settings.sync(); }
+    Q_INVOKABLE bool savedGlobeMode() const { return settings.value("view/globeMode",true).toBool(); }
+    Q_INVOKABLE void saveGlobeMode(bool globe) {
+        settings.setValue("view/globeMode",globe);settings.sync();
+        if(settings.status()!=QSettings::NoError) qWarning()<<"Could not save map view";
+    }
+    Q_INVOKABLE void saveHomeCity(const QString& name,double latitude,double longitude) {
+        // Store plain Qt values: QML delegate objects cannot be persisted as JavaScript objects.
+        if(name.isEmpty()) settings.remove("view/homeCity");
+        else if(std::isfinite(latitude) && std::isfinite(longitude) && std::abs(latitude)<=90 && std::abs(longitude)<=180)
+            settings.setValue("view/homeCity",QVariantMap{{"name",name},{"latitude",latitude},{"longitude",longitude}});
+        settings.sync();
+        if(settings.status()!=QSettings::NoError) qWarning()<<"Could not save home city";
+    }
+    Q_INVOKABLE QVariantList findCities(const QString& query) const {
+        static const QVariantList cities=[] {
+            QVariantList result; QFile file(":/qt/qml/EarthSky/assets/worldcities_list.csv");
+            if(!file.open(QIODevice::ReadOnly)) return result;
+            const auto lines=QString::fromUtf8(file.readAll()).split('\n');
+            for(int n=1;n<lines.size();++n) {
+                QStringList fields; QString field; bool quoted=false;
+                const QString line=lines[n].trimmed();
+                for(int i=0;i<line.size();++i) {
+                    const QChar c=line[i];
+                    if(c=='"') { if(quoted && i+1<line.size() && line[i+1]=='"') { field+='"';++i; } else quoted=!quoted; }
+                    else if(c==',' && !quoted) { fields<<field;field.clear(); } else field+=c;
+                }
+                fields<<field; if(fields.size()!=4)continue;
+                bool a=false,b=false;double lat=fields[2].toDouble(&a),lon=fields[3].toDouble(&b);
+                if(a&&b&&std::abs(lat)<=90&&std::abs(lon)<=180)
+                    result.append(QVariantMap{{"name",fields[1]+", "+fields[0]},{"latitude",lat},{"longitude",lon}});
+            }
+            return result;
+        }();
+        QVariantList matches;const auto words=query.trimmed().split(' ',Qt::SkipEmptyParts);
+        for(const auto& city:cities) {
+            const auto name=city.toMap().value("name").toString();bool match=true;
+            for(const auto& word:words)if(!name.contains(word,Qt::CaseInsensitive)){match=false;break;}
+            if(match)matches.append(city);if(matches.size()>=60)break;
+        }
+        return matches;
+    }
     Q_INVOKABLE bool layerVisible(const QString& key) const {
         const bool defaultVisible=key!="planets" && key!="constellations" && key!="latitudeLines" && key!="allConstellations";
         return settings.value("visibility/"+key,defaultVisible).toBool();
@@ -586,7 +629,7 @@ class GlobeView : public QQuickPaintedItem {
     QVariantMap mLayers;
     bool mHorizon=false,mDragging=false,mMoved=false,mDirty=true;
     QPointF mObserver,mPress;
-    double mYaw=0,mPitch=15,mZoom=1,mPressYaw=0,mPressPitch=0;
+    double mYaw=0,mPitch=15,mZoom=1.36,mPressYaw=0,mPressPitch=0;
     double mCy=1,mSy=0,mCp=std::cos(rad(15)),mSp=std::sin(rad(15));
     QImage mGround;
     QRectF mGroundRect;
@@ -635,7 +678,7 @@ public:
     void setYaw(double value) { value=wrap(value);if(qFuzzyCompare(value+181,mYaw+181))return;mYaw=value;mCy=std::cos(rad(value));mSy=std::sin(rad(value));invalidate();emit viewChanged(); }
     void setPitch(double value) { value=std::clamp(value,-90.0,90.0);if(value==mPitch)return;mPitch=value;mCp=std::cos(rad(value));mSp=std::sin(rad(value));invalidate();emit viewChanged(); }
     void setZoom(double value) { value=std::clamp(value,.65,6.0);if(value==mZoom)return;mZoom=value;invalidate();emit viewChanged(); }
-    Q_INVOKABLE void fitView() { setYaw(0);setPitch(15);setZoom(1); }
+    Q_INVOKABLE void fitView() { setYaw(0);setPitch(15);setZoom(1.36); }
     Q_INVOKABLE void centerOn(double lon,double lat) { setYaw(lon+(mSky?mSky->earthOffset()*360:0));setPitch(lat); }
     Q_INVOKABLE void centerOnBody(const QString& name) {
         if(!mSky || (name!="Sun" && name!="Moon"))return;

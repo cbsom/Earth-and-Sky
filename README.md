@@ -29,7 +29,7 @@ The application is built with **C++17 and Qt Quick/QML**. It runs locally, works
 - A compact footer with six visibility switches whose settings survive restarts; the Sun layer is always enabled.
 - Readable grey constellation labels with dark outlines, plus small body labels.
 - A responsive footer that remains on-screen while the map fills the area above it.
-- One unified Rotate Sky / Rotate Earth group with eleven intervals, mirrored globe step buttons, and forward/reverse playback, plus a Reset button for current time and the full map.
+- One unified Rotate Sky / Rotate Earth group with eleven intervals, mirrored globe step buttons, and forward/reverse playback, plus a Reset button for current time and your home city.
 - Continuous forward or backward Earth rotation using the shared interval dropdown and playback controls.
 - Scroll-wheel zoom in every view, drag panning, and click-to-select My Horizon locations.
 - **My Horizon:** select a location to highlight the sky above its geometric horizon and fade the rest of the map.
@@ -221,7 +221,7 @@ The dropdown combines all previous time and speed choices without duplicates: **
 
 Changing the interval during playback keeps time continuous and preserves the mode and direction. Changing **Rotate Sky / Rotate Earth** pauses playback and preserves the displayed time and camera orientation. Returning to Rotate Sky restores the Earth-fixed reference frame, so Earth does not keep moving accidentally.
 
-**Full map / Full globe** fits the current view and clears My Horizon without changing time. **Reset** stops playback, returns to current live time, chooses Rotate Sky, and fits the current view. Layer switches, displayed time, and selected-location coordinates remain shared between both views. Modes, intervals, and playback state are not saved between launches; layer switches are saved independently.
+**Full map / Full globe** fits the current view and clears My Horizon without changing time. **Reset** stops playback, returns to current live time, chooses Rotate Sky, and centers the current view on your saved home city (or fits it if none is set). Layer switches, displayed time, and selected-location coordinates remain shared between both views. The Flat map/Globe choice and home city are saved alongside layer switches. Rotation modes, intervals, and playback state are not saved between launches.
 
 The date/time beneath the controls is local to the computer and includes the UTC offset for the selected date. Steps are elapsed UTC durations, so the local wall-clock hour can change across daylight-saving transitions. The application starts in live mode on each launch; the selected time and playback state are not saved. Controls and layer switches share one compact row when space permits, and stack on narrower windows.
 
@@ -231,7 +231,7 @@ Geographic latitude lines stay fixed on Earth while the celestial overlays move.
 
 Use the **scroll wheel** to zoom in or out in either view, including My Horizon and during playback. In the flat map, zoom ranges from 1x to 8x and follows the pointer; drag to pan, with seamless longitude wrapping and limits at the poles. In Globe view, zoom ranges from 0.65x to 6x around the globe center; left-drag turns the scene. Body markers and labels remain readable while zooming.
 
-Clicking selects a geographic location for My Horizon; it does not zoom. Clicking a Sun, Moon, or planet marker selects the map location beneath it. The current zoom level is retained. Zooming out to 1x keeps My Horizon active. Use the single **Full map** button in the footer to clear the selected horizon and show the whole world without changing the displayed time. **Reset** returns to the current live time and full map and stops playback.
+Clicking selects a geographic location for My Horizon; it does not zoom. Clicking a Sun, Moon, or planet marker selects the map location beneath it. The current zoom level is retained. Zooming out to 1x keeps My Horizon active. Use the single **Full map** button in the footer to clear the selected horizon and show the whole world without changing the displayed time. **Reset** returns to the current live time, centers your home city if set, and stops playback.
 
 ### My Horizon
 
@@ -255,7 +255,7 @@ Earth is opaque and hides objects behind its disk. Ground imagery retains the sa
 
 Click Earth's surface to select a My Horizon location. The selected location and footer coordinates are shared with the flat map. In Globe view, celestial objects, stars, lines, and constellation names below the selected geometric horizon are completely hidden, with line segments clipped at the horizon. The corresponding part of Earth is strongly faded but remains visible. You can still drag and zoom while My Horizon is active.
 
-**Full globe** fits and reorients the globe and clears My Horizon, keeping the displayed time. **Reset** also returns to current live time and stops playback, while retaining your selected view. Switching back to Flat map keeps its own zoom and camera position. View and camera choices are not saved across launches; the app starts with the flat map.
+**Full globe** fits and reorients the globe and clears My Horizon, keeping the displayed time. **Reset** also returns to current live time and stops playback, while retaining your selected view. Switching back to Flat map keeps its own zoom and camera position. The app starts in Globe view on first launch, with the globe filling about 95% of the map section’s smaller dimension. Subsequent launches restore your last Flat map/Globe choice and center your saved home city. Camera zoom and manually selected locations are not saved.
 
 To launch directly in Globe view, pass `--globe`. This can be combined with `--capture` for a globe screenshot. No additional Qt module, network service, or runtime asset download is required.
 
@@ -331,3 +331,9 @@ The Earth image is based on a fixed NASA Blue Marble composite, not live satelli
 - **User interface and rendering:** [Qt](https://www.qt.io/), dynamically linked. Qt and its dependencies retain their applicable licenses. Retain the relevant notices and license materials when distributing packaged builds.
 
 Additional image attribution is recorded in [source/assets/README.md](outputs/Earth-and-Sky/source/assets/README.md).
+
+### Home city
+
+Choose **Home city…** at the upper right, then search by city or country and select a result. The city and coordinates are saved with your preferences. Opening the app and pressing **Reset** center this city without enabling My Horizon; Reset also returns to current time and stops playback. **Clear home** removes this preference. **Full map / Full globe** still fits the entire view independently.
+
+City choices come from the bundled `source/assets/worldcities_list.csv`; no network connection is required. The outer celestial-sphere outline in Globe view is shown only when **All constellations** is enabled, and remains hidden in My Horizon.

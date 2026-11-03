@@ -13,6 +13,6 @@ if(WIN32)
     target_sources(EarthSky PRIVATE app.rc)
 endif()
 qt_add_qml_module(EarthSky URI EarthSky VERSION 1.0 QML_FILES Main.qml
-    RESOURCES data/zodiac.json data/constellations.json data/D3-CELESTIAL-LICENSE assets/world.jpg assets/moon-full.jpg assets/earth-and-sky.ico)
+    RESOURCES data/zodiac.json data/constellations.json data/D3-CELESTIAL-LICENSE assets/worldcities_list.csv assets/world.jpg assets/moon-full.jpg assets/earth-and-sky.ico)
 target_link_libraries(EarthSky PRIVATE Qt6::Quick)
 install(TARGETS EarthSky RUNTIME DESTINATION .)
