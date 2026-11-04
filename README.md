@@ -36,11 +36,76 @@ The application is built with **C++17 and Qt Quick/QML**. It runs locally, works
 - Subtle labeled equator, tropics, and polar circles with their own visibility switch.
 - A half-day, half-night Earth icon for the executable and application window.
 
-## Run a packaged copy
+## Download and install
 
-If you have a packaged Windows build, extract the whole package and open `Earth-and-Sky.exe` inside its `app` folder.
+Download **Earth & Sky v0.1.0** from the [GitHub release](https://github.com/cbsom/Earth-and-Sky/releases/tag/Earth-and-Sky-v0.1.0). Choose one package for your operating system:
 
-Keep the adjacent DLLs and plugin folders with the executable. The packaged application includes its Qt dependencies; users do not need to install Qt separately.
+| Operating system | Download | Installation |
+| --- | --- | --- |
+| Windows 10/11, x64 | [Windows setup](https://github.com/cbsom/Earth-and-Sky/releases/download/Earth-and-Sky-v0.1.0/Earth-and-Sky-0.1.0-Windows-x64-Setup.exe) | Run the installer; creates a Start menu entry. |
+| Linux Mint 22 / Ubuntu 24.04, x86_64 | [Debian package (.deb)](https://github.com/cbsom/Earth-and-Sky/releases/download/Earth-and-Sky-v0.1.0/Earth-and-Sky-0.1.0-Linux-amd64.deb) | Installs through the package manager and adds an application menu entry. |
+| Linux x86_64, portable | [AppImage](https://github.com/cbsom/Earth-and-Sky/releases/download/Earth-and-Sky-v0.1.0/Earth-and-Sky-0.1.0-Linux-x86_64.AppImage) | Make executable and run; no system-wide installation. |
+
+These packages include Qt. You do not need to install Qt, CMake, a compiler, or download the source code to use the application. Linux still needs compatible system and graphics libraries. The Linux packages were built on Mint 22.3 (Ubuntu 24.04 base); compatibility with older distributions and ARM64 has not been validated. No macOS installer is available for this release.
+
+### Windows
+
+1. Download and run `Earth-and-Sky-0.1.0-Windows-x64-Setup.exe`.
+2. Follow the setup wizard. Installation is for your current Windows account and does not require administrator privileges.
+3. Optionally select a desktop shortcut, then launch **Earth & Sky** from the Start menu or at the end of setup.
+
+To update, close the application and run the newer installer. To uninstall, use **Settings > Apps** in Windows. Saved preferences are retained when updating or uninstalling.
+
+### Linux Mint / Ubuntu: install the .deb
+
+Download `Earth-and-Sky-0.1.0-Linux-amd64.deb`. Open a terminal in the folder containing the download and run:
+
+```bash
+sudo apt install ./Earth-and-Sky-0.1.0-Linux-amd64.deb
+```
+
+Launch **Earth & Sky** from the application menu, or run:
+
+```bash
+earth-and-sky
+```
+
+To update, close the application and install the newer `.deb` with the same `sudo apt install ./...` command. To uninstall:
+
+```bash
+sudo apt remove earth-and-sky
+```
+
+Saved preferences are retained. This package targets Mint 22 / Ubuntu 24.04 x86_64; other Debian-based distributions have not been validated.
+
+### Linux: run the portable AppImage
+
+Download `Earth-and-Sky-0.1.0-Linux-x86_64.AppImage`. In the folder containing the download, run:
+
+```bash
+chmod +x Earth-and-Sky-0.1.0-Linux-x86_64.AppImage
+./Earth-and-Sky-0.1.0-Linux-x86_64.AppImage
+```
+
+If FUSE is unavailable, use extraction mode instead:
+
+```bash
+APPIMAGE_EXTRACT_AND_RUN=1 ./Earth-and-Sky-0.1.0-Linux-x86_64.AppImage
+```
+
+The AppImage does not automatically create an application menu entry. Keep it in a permanent folder if you create a launcher for it. To update, close the application and replace the AppImage with the newer download. To remove it, delete the AppImage and any launcher you created; saved preferences are retained.
+
+### Verify a Linux download (optional)
+
+Download the matching `.sha256` file from the release into the same folder as the package, then run the appropriate command:
+
+```bash
+sha256sum -c Earth-and-Sky-0.1.0-Linux-amd64.deb.sha256
+# Or, for the AppImage:
+sha256sum -c Earth-and-Sky-0.1.0-Linux-x86_64.AppImage.sha256
+```
+
+A matching download prints `OK`. Choose the installer or AppImage linked above for normal use; the compiler-specific archives and GitHub's source-code archives are separate developer downloads.
 
 ## Build on Windows
 
@@ -121,7 +186,7 @@ In that case, use `build-nmake\Earth-and-Sky.exe` in the copy command above. Do 
 - **A DLL or QML module is missing when launching:** run `windeployqt` and launch the executable from the resulting `app` folder. Keep that folder's contents together.
 - **Changes do not appear:** rebuild, copy the new executable into the application folder, and reopen that copy. QML and image assets are embedded in the executable.
 
-The current renamed application and both views have been built and tested on Windows. An earlier version was also built with Qt 6.8.3 and GCC on Linux; the latest renamed globe version, Linux packaging, and macOS builds have not been revalidated in this session.
+The current application has been built on Windows and Linux. The Linux AppImage and extracted Debian package passed built-in self-tests and headless rendering checks for both flat-map and globe views using Qt 6.8.3 and GCC on Mint 22.3. Interactive installation, clean-machine compatibility, and macOS builds have not been validated; see [Linux packaging validation](installer/linux/VALIDATION.md).
 
 ## Build on Linux
 

@@ -8,6 +8,8 @@ fi
 [[ $(uname -s) == Linux && $(uname -m) == x86_64 ]] || { echo 'Run inside x86_64 Linux or WSL Ubuntu.' >&2; exit 1; }
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 source_dir="$repo/outputs/Earth-and-Sky/source"
+app_version=$(sed -n 's/^#define AppVersion "\([^"]*\)"/\1/p' "$repo/installer/Earth-and-Sky.iss")
+[[ "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid installer version" >&2; exit 1; }
 qt_prefix=${1:-${QT_ROOT:-}}
 [[ -n "$qt_prefix" && -x "$qt_prefix/bin/qmake" ]] || { echo 'Supply a Linux Qt 6.8+ kit path, e.g. "$HOME/Qt/6.8.3/gcc_64".' >&2; exit 1; }
 qt_prefix=$(cd -- "$qt_prefix" && pwd)
@@ -26,6 +28,7 @@ mkdir -p "$build" "$tools" "$output"
 # A fresh staging directory prevents removed dependencies lingering in later builds.
 # Retain older stages for inspection rather than recursively deleting directories.
 appdir=$(mktemp -d "$work/Earth-and-Sky.XXXXXX.AppDir")
+chmod 755 "$appdir"
 export PATH="$qt_prefix/bin:$tools:$PATH"
 export QMAKE="$qt_prefix/bin/qmake"
 export QML_SOURCES_PATHS="$source_dir"
@@ -61,16 +64,20 @@ fetch linuxdeploy-plugin-qt-x86_64.AppImage https://github.com/linuxdeploy/linux
 sha256sum "$tools/"*.AppImage > "$output/Earth-and-Sky-Linux-build-tools.sha256"
 # Run build tools without requiring FUSE, useful in WSL and containers.
 export APPIMAGE_EXTRACT_AND_RUN=1
-export LDAI_OUTPUT="$output/Earth-and-Sky-0.1.0-Linux-x86_64.AppImage"
-export LDAI_VERSION=0.1.0
+export LDAI_OUTPUT="$output/Earth-and-Sky-${app_version}-Linux-x86_64.AppImage"
+export LDAI_VERSION="$app_version"
 export EXTRA_QT_MODULES=svg
+# Bundle the offscreen platform for checks without a desktop or SDK.
+export EXTRA_PLATFORM_PLUGINS="libqoffscreen.so${EXTRA_PLATFORM_PLUGINS:+;$EXTRA_PLATFORM_PLUGINS}"
+# Cache the AppImage runtime too; appimagetool otherwise downloads it each time.
+fetch runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+export LDAI_RUNTIME_FILE="$tools/runtime-x86_64"
+sha256sum "$tools/runtime-x86_64" >> "$output/Earth-and-Sky-Linux-build-tools.sha256"
 cd -- "$work"
 "$tools/linuxdeploy-x86_64.AppImage" --appdir "$appdir" --plugin qt --output appimage
 [[ -s "$LDAI_OUTPUT" ]] || { echo 'AppImage output missing.' >&2; exit 1; }
 chmod +x "$LDAI_OUTPUT"
-# Do not allow the SDK paths to conceal missing bundled Qt dependencies.
-env -u LD_LIBRARY_PATH -u QT_PLUGIN_PATH -u QML_IMPORT_PATH -u QML2_IMPORT_PATH \
-    QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software XDG_CONFIG_HOME="$work/test-config" \
-    "$LDAI_OUTPUT" --self-test
-sha256sum "$LDAI_OUTPUT" > "$LDAI_OUTPUT.sha256"
+bash "$repo/installer/linux/smoke-test.sh" "$LDAI_OUTPUT"
+(cd -- "$output" && sha256sum "$(basename -- "$LDAI_OUTPUT")") > "$LDAI_OUTPUT.sha256"
+printf '%s\n' "$appdir" > "$work/latest-appdir.txt"
 printf '\nCreated: %s\nTest on a normal Linux desktop before publishing.\n' "$LDAI_OUTPUT"
