@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Earth & Sky
+Comment=Explore the Sun, Moon, planets and constellations above Earth
+Exec=Earth-and-Sky
+Icon=earth-and-sky
+Terminal=false
+Categories=Education;Science;Astronomy;
+Keywords=Earth;Sky;Sun;Moon;Planets;Constellations;

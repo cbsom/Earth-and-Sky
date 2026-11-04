@@ -181,6 +181,14 @@ The application may be rebuilt to use modified compatible Qt libraries.
 
 ### Home city
 
-Choose **Home city…** at the upper right, then search by city or country and select a result. The city and coordinates are saved with your preferences. Opening the app and pressing **Reset** center this city without enabling My Horizon; Reset also returns to current time and stops playback. **Clear home** removes this preference. **Full map / Full globe** still fits the entire view independently.
+Choose **Home city…** at the upper right, then search by city or country and select a result. The city and coordinates are saved with your preferences, and the button displays the selected city name. The city list loads only when you open the picker and is cached for later searches. Opening the app and pressing **Reset** center this city without enabling My Horizon; Reset also returns to current time and stops playback. **Clear home** removes this preference. **Full map / Full globe** still fits the entire view independently.
 
 City choices come from the bundled `source/assets/worldcities_list.csv`; no network connection is required. The outer celestial-sphere outline in Globe view is shown only when **All constellations** is enabled, and remains hidden in My Horizon.
+
+### Windows installer
+
+A per-user Windows installer can be built with Inno Setup 7. From the repository root, run `installer\build-installer.cmd` after building and deploying the app. The resulting setup executable is in `outputs/installers/`. It includes the required Qt runtime, Start menu shortcut, optional desktop shortcut, and uninstaller; users do not need Qt installed. Home-city and view preferences are retained across upgrades and uninstall. See the repository’s `installer/README.md` for build details.
+
+### Linux AppImage packaging
+
+The repository includes `installer/linux/build-appimage.sh` to build and bundle a Linux x86_64 AppImage using a Linux Qt 6.8+ kit. See `installer/linux/README.md` for prerequisites and WSL commands. This packaging path is prepared but has not yet been validated on Linux.

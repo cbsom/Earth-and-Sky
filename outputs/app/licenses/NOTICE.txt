@@ -1,0 +1,26 @@
+Daylight uses Qt 6.8.3, dynamically linked under its applicable open-source
+licenses. License texts are supplied in this folder; Qt component and third-party
+notices are recorded in Qt-SBOM. Qt source archives:
+https://download.qt.io/archive/qt/6.8/6.8.3/single/
+
+Qt libraries may be replaced with modified binary-compatible builds.
+Daylight application source and rebuild instructions are provided in the
+adjacent source directory and README.md.
+
+Astronomy Engine by Don Cross: MIT license, included here and with its source.
+https://github.com/cosinekitty/astronomy
+
+Earth map: NASA Earth Observatory, Blue Marble Next Generation with Topography,
+October 2004. Source and image credits:
+https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography/
+
+Microsoft Visual C++ runtime libraries are included from the installed Visual
+Studio redistributable components. Copyright Microsoft Corporation.
+
+Moon photograph: Gregory H. Revera, FullMoon2010.jpg, CC BY-SA 3.0.
+https://commons.wikimedia.org/wiki/File:FullMoon2010.jpg
+https://creativecommons.org/licenses/by-sa/3.0/
+Changes: black margins cropped, resized, and current-phase shadow mask applied.
+The adapted lunar imagery is licensed under CC BY-SA 3.0. This also applies to
+the lunar imagery visible in preview.png. The original photograph is included
+in source/assets/moon-full.jpg, together with source implementing the adaptation.

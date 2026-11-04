@@ -406,10 +406,13 @@ Window {
     }
     Rectangle {
         anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 10
-        width: 100; height: 28; radius: 6; z: 20
+        width: Math.max(100, homeCityTextMetrics.width + 28); height: 28; radius: 6; z: 20
+        TextMetrics { id: homeCityTextMetrics; text: homeCityAction.label; font.family: "Segoe UI"; font.pixelSize: 11 }
         color: "#dd101d29"; border.color: "#344754"
         TimeAction {
-            anchors.fill: parent; objectName: "homeCityButton"; label: "Home city…"
+            id: homeCityAction
+            anchors.fill: parent; objectName: "homeCityButton"
+            label: window.homeCity.name ? window.homeCity.name.substring(0, window.homeCity.name.lastIndexOf(", ")) : "Home city…"
             description: window.homeCity.name ? "Home: " + window.homeCity.name : "Choose your home city"
             onTriggered: { cityDialog.visible = true; citySearch.forceActiveFocus() }
         }
@@ -428,14 +431,13 @@ Window {
                 TextInput {
                     id: citySearch; objectName: "citySearch"; anchors.fill: parent; anchors.margins: 8
                     color: "#e1edf5"; font.pixelSize: 14; clip: true; selectByMouse: true
-                    onTextChanged: cityResults.model = sky.findCities(text)
                     Keys.onEscapePressed: cityDialog.visible = false
                 }
                 Text { anchors.fill: parent; anchors.margins: 8; visible: !citySearch.text && !citySearch.activeFocus; text: "Search city or country"; color: "#8197aa" }
             }
             ListView {
                 id: cityResults; objectName: "cityResults"; x: 18; y: 116; width: parent.width - 36; height: parent.height - 164
-                clip: true; model: sky.findCities("")
+                clip: true; model: cityDialog.visible ? sky.findCities(citySearch.text) : []
                 delegate: Rectangle {
                     required property var modelData
                     width: cityResults.width; height: 34; radius: 4; color: cityHit.containsMouse ? "#294252" : "transparent"

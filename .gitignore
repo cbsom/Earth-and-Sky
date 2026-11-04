@@ -97,3 +97,6 @@ Desktop.ini
 
 # Do not ignore source files, vendor/astronomy.*, image assets, app.rc,
 # CMakeLists.txt, source/build.cmd, shared presets, READMEs or license notices.
+
+# Generated Windows installers.
+/outputs/installers/
