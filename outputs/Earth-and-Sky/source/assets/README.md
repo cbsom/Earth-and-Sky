@@ -16,3 +16,9 @@ margins, resize it, and darken the unilluminated area according to the calculate
 lunar phase. The adapted lunar imagery is also licensed under CC BY-SA 3.0.
 
 `world_changed.jpg` is the modified map retained for comparison; it is not currently embedded in the executable. The existing runtime brightness adjustment in `dayImage()` is applied to the original map.
+
+## City database
+
+`worldcities_list.csv` is adapted from **Simplemaps World Cities Database, free Basic edition**, under **Creative Commons Attribution 4.0 International (CC BY 4.0)**. Source: https://simplemaps.com/data/world-cities. License: https://creativecommons.org/licenses/by/4.0/.
+
+Changes: the CSV retains only country, city, latitude (`lat`), and longitude (`lng`) for the offline home-city picker. The downloaded edition/date was not recorded. No endorsement by Simplemaps is implied. This dataset retains CC BY 4.0 independently of the application’s GPL license.

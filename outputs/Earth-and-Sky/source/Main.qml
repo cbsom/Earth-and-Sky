@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 cbsom and contributors
+
 import QtQuick
 import QtQuick.Window
 import EarthSky.Globe 1.0

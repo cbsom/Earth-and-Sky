@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 cmake_minimum_required(VERSION 3.21)
 if(POLICY CMP0141)
     cmake_policy(SET CMP0141 NEW)
@@ -16,3 +17,9 @@ qt_add_qml_module(EarthSky URI EarthSky VERSION 1.0 QML_FILES Main.qml
     RESOURCES data/zodiac.json data/constellations.json data/D3-CELESTIAL-LICENSE assets/worldcities_list.csv assets/world.jpg assets/moon-full.jpg assets/earth-and-sky.ico)
 target_link_libraries(EarthSky PRIVATE Qt6::Quick)
 install(TARGETS EarthSky RUNTIME DESTINATION .)
+
+# Retain licensing with CMake-installed binaries.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../LICENSE"
+              "${CMAKE_CURRENT_SOURCE_DIR}/../../../THIRD-PARTY-NOTICES.txt" DESTINATION licenses)
+install(FILES data/D3-CELESTIAL-LICENSE DESTINATION licenses)
+install(FILES vendor/LICENSE DESTINATION licenses RENAME Astronomy-Engine-MIT.txt)

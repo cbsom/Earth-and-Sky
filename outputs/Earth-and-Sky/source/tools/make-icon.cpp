@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 cbsom and contributors
+
 // Generate a geographic Earth icon from the bundled NASA map.
 #include <QCoreApplication>
 #include <QImage>

@@ -41,10 +41,14 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
 [Files]
+Source: "..\LICENSE"; DestDir: "{app}\licenses"; Flags: ignoreversion
+Source: "..\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}\licenses"; Flags: ignoreversion
 ; Keep matching Qt DLLs, plugins, and QML imports private to this application.
 ; Inno's normal version/content checks skip identical files on upgrades.
 ; Do not use onlyifdoesntexist: changed runtime dependencies must be upgraded.
 Source: "{#PackageRoot}\app\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs replacesameversion
+Source: "..\LICENSE"; DestDir: "{app}\documentation"; Flags: ignoreversion
+Source: "..\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}\documentation"; Flags: ignoreversion
 Source: "{#PackageRoot}\README.md"; DestDir: "{app}\documentation"; Flags: ignoreversion
 Source: "{#PackageRoot}\screenshots\*"; DestDir: "{app}\documentation\screenshots"; Flags: ignoreversion recursesubdirs
 Source: "{#PackageRoot}\source\assets\README.md"; DestDir: "{app}\documentation\source\assets"; Flags: ignoreversion

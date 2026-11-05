@@ -89,6 +89,9 @@ jobs:
         run: |
           mkdir -p dist
           cp build/Earth-and-Sky dist/
+          cp LICENSE THIRD-PARTY-NOTICES.txt dist/
+          cp outputs/Earth-and-Sky/source/data/D3-CELESTIAL-LICENSE dist/
+          cp outputs/Earth-and-Sky/source/vendor/LICENSE dist/Astronomy-Engine-MIT.txt
           tar -C dist -czf Earth-and-Sky-linux-${{ matrix.c_compiler }}.tar.gz .
 
       - name: Package binaries (Windows)
@@ -97,7 +100,14 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item "build/Release/Earth-and-Sky.exe" "dist/"
+          Copy-Item LICENSE,THIRD-PARTY-NOTICES.txt "dist/"
+          Copy-Item "outputs/Earth-and-Sky/source/data/D3-CELESTIAL-LICENSE" "dist/"
+          Copy-Item "outputs/Earth-and-Sky/source/vendor/LICENSE" "dist/Astronomy-Engine-MIT.txt"
           Compress-Archive -Path "dist/*" -DestinationPath "Earth-and-Sky-windows-${{ matrix.c_compiler }}.zip" -Force
+
+      - name: Archive matching application source
+        if: runner.os == 'Linux' && matrix.c_compiler == 'gcc'
+        run: python3 installer/package-source.py
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
@@ -106,3 +116,5 @@ jobs:
           path: |
             *.tar.gz
             *.zip
+            outputs/installers/*-Source.zip
+            outputs/installers/*-Source.zip.sha256

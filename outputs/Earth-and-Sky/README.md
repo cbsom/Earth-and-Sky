@@ -2,6 +2,8 @@
 
 ![Earth & Sky — flat-map view](screenshots/flat-map.png)
 
+**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/Earth-and-Sky-v0.1.0)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
+
 A fully offline Qt Quick desktop application with a high-resolution world map,
 daylight and twilight shading, the Sun and Moon, five planets, and all 88
 constellations, with a separate zodiac-only switch. Each body or star is positioned above its
@@ -192,3 +194,9 @@ A per-user Windows installer can be built with Inno Setup 7. From the repository
 ### Linux AppImage packaging
 
 The repository includes `installer/linux/build-appimage.sh` to build and bundle a Linux x86_64 AppImage using a Linux Qt 6.8+ kit. See `installer/linux/README.md` for prerequisites and WSL commands. This packaging path is prepared but has not yet been validated on Linux.
+
+## License
+
+Original Earth & Sky code and build scripts are licensed under **GNU GPL v3.0 or later** ([LICENSE](LICENSE)). Copyright © 2026 cbsom and contributors. You may use, modify and redistribute the application under those terms; it comes without warranty.
+
+Third-party components retain their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). The city list is adapted from [Simplemaps World Cities Database, free Basic edition](https://simplemaps.com/data/world-cities), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It retains country, city, latitude and longitude columns. The Moon photograph and its adaptations retain CC BY-SA 3.0.

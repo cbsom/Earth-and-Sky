@@ -43,6 +43,8 @@ install -Dm644 "$source_dir/assets/earth-and-sky.png" "$appdir/usr/share/icons/h
 desktop-file-validate "$appdir/usr/share/applications/earth-and-sky.desktop"
 docs="$appdir/usr/share/doc/earth-and-sky"
 mkdir -p "$docs"
+cp "$repo/LICENSE" "$docs/LICENSE"
+cp "$repo/THIRD-PARTY-NOTICES.txt" "$docs/THIRD-PARTY-NOTICES.txt"
 cp "$repo/outputs/Earth-and-Sky/README.md" "$docs/README.md"
 cp "$source_dir/assets/README.md" "$docs/IMAGE-CREDITS.md"
 cp "$source_dir/data/D3-CELESTIAL-LICENSE" "$docs/CONSTELLATION-LICENSE"

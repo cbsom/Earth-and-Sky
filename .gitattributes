@@ -1,0 +1,5 @@
+# Keep scripts runnable after checkout on Windows or Linux.
+*.sh text eol=lf
+*.py text eol=lf
+*.desktop text eol=lf
+*.yml text eol=lf

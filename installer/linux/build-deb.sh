@@ -38,6 +38,12 @@ install -Dm644 "$repo/outputs/Earth-and-Sky/source/assets/earth-and-sky.png" "$s
 desktop-file-validate "$stage/usr/share/applications/earth-and-sky.desktop"
 mkdir -p "$stage/usr/share/doc/earth-and-sky"
 cp -a "$payload/usr/share/doc/earth-and-sky/." "$stage/usr/share/doc/earth-and-sky/"
+# Refresh notices even when the completed AppDir predates them.
+for destination in "$payload/usr/share/doc/earth-and-sky" "$stage/usr/share/doc/earth-and-sky"; do
+    cp "$repo/LICENSE" "$destination/LICENSE"
+    cp "$repo/THIRD-PARTY-NOTICES.txt" "$destination/THIRD-PARTY-NOTICES.txt"
+    cp "$repo/THIRD-PARTY-NOTICES.txt" "$destination/copyright"
+done
 cat > "$work/debian/control" <<'EOF'
 Source: earth-and-sky
 Section: science

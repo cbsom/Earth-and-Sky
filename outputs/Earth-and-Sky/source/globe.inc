@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 cbsom and contributors
+
 // Included after Sky and GlobeView declarations in main.cpp.
 GlobeView::V GlobeView::view(V v) const {
     const double forward=mSy*v.x+mCy*v.z;

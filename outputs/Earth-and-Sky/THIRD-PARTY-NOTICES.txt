@@ -1,0 +1,62 @@
+Earth & Sky — licensing and third-party notices
+
+Copyright (C) 2026 cbsom and contributors.
+Original Earth & Sky application code and build scripts are licensed under the
+GNU General Public License version 3 or (at your option) any later version
+(SPDX: GPL-3.0-or-later). See LICENSE. This program comes without warranty,
+including implied warranties of merchantability or fitness for a particular
+purpose. Redistribution and modification are permitted under the GPL.
+Third-party components, data, and imagery retain their separate licenses.
+
+CITY DATABASE
+Simplemaps, World Cities Database, free Basic edition.
+https://simplemaps.com/data/world-cities
+Creative Commons Attribution 4.0 International (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+https://creativecommons.org/licenses/by/4.0/legalcode
+Changes: worldcities_list.csv is a reduced-column adaptation containing
+country, city, latitude (lat), and longitude (lng). The downloaded edition/date
+was not recorded. No endorsement by Simplemaps is implied.
+
+MOON IMAGE
+FullMoon2010.jpg by Gregory H. Revera, CC BY-SA 3.0.
+https://commons.wikimedia.org/wiki/File:FullMoon2010.jpg
+https://creativecommons.org/licenses/by-sa/3.0/
+Changes: runtime cropping, resizing and phase shading. Adapted lunar imagery
+retains CC BY-SA 3.0. Original photograph: source/assets/moon-full.jpg.
+
+EARTH IMAGE
+NASA Earth Observatory, Blue Marble Next Generation with Topography,
+October 2004. The icon is also derived from the Earth image.
+https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography/
+Original and modified maps are in source/assets. Brightness and day/night
+shading are applied at runtime.
+
+CONSTELLATIONS
+D3-Celestial by Olaf Frohn, BSD-3-Clause; catalogs adapted for Earth & Sky.
+https://github.com/ofrohn/d3-celestial
+License: source/data/D3-CELESTIAL-LICENSE or licenses/D3-CELESTIAL-LICENSE.
+
+ASTRONOMY
+Astronomy Engine by Don Cross, MIT.
+https://github.com/cosinekitty/astronomy
+License: source/vendor/LICENSE or licenses/Astronomy-Engine-MIT.txt.
+
+QT
+Qt 6.8.3 is dynamically linked under its applicable open-source licenses.
+Qt components and their dependencies retain their own licenses. Retain the
+LGPL/GPL texts and relevant component/SBOM notices when packaging them.
+Qt libraries may be replaced with modified binary-compatible builds.
+Upstream source reference: https://download.qt.io/archive/qt/6.8/6.8.3/single/
+This upstream link is a reference, not a distributor's written source offer.
+Distributors must arrange compliant access to exact corresponding source for
+bundled Qt components and other covered dependencies. See RELEASE-CHECKLIST.md.
+
+WINDOWS RUNTIME
+Windows packages include Microsoft Visual C++ runtime redistributable libraries.
+Copyright Microsoft Corporation; their redistribution terms remain applicable.
+
+APPLICATION SOURCE
+https://github.com/cbsom/Earth-and-Sky
+Build instructions: README.md and installer/. Use source matching the binary;
+the default branch may differ from the source used for a previous release.

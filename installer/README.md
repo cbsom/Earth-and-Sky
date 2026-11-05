@@ -17,3 +17,7 @@ Keep `InstallerAppId` stable across releases. Update `AppVersion` in the `.iss` 
 ## Validation
 
 The installer payload was installed into an isolated test directory, the installed executable passed `--self-test`, a second install skipped identical Qt DLLs (verified by SHA-256 in the setup log), and uninstall removed the installed files successfully. The test build used `/DInstallerSmokeTest` to disable shortcut creation and uninstall-registry registration because the agent sandbox blocks those Windows locations. Those actions remain enabled in the normal build and require an interactive installation check outside the sandbox.
+
+## Licensing and source snapshots
+
+Every installer includes the project GPL license and THIRD-PARTY-NOTICES.txt. Qt, city data, images and vendored code retain their respective licenses. Run `python installer/package-source.py` to archive the current application source and build scripts with a file-hash manifest; preserve the matching snapshot when building binaries. See `../RELEASE-CHECKLIST.md` for source distribution and Qt dependency-source requirements before publishing.

@@ -2,6 +2,8 @@
 
 An offline desktop app for exploring Earth and the sky, with flat-map and globe views, daylight and twilight, the Sun, Moon, planets, and all 88 constellations.
 
+**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/Earth-and-Sky-v0.1.0)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
+
 Earth & Sky displays a high-resolution world map in a single window. The daylight side stays bright, the night side is shaded, and a smooth transition shows twilight. A subtle line marks the approximate sunrise/sunset boundary. Sun, Moon, and planet markers show the points on Earth directly beneath them. The Moon uses a real photograph shaded to its phase at the displayed time. All 88 constellations are available as individually positioned principal stars joined in conventional patterns, with a separate zodiac-only switch and a faint ecliptic tracing the Solar System’s reference plane.
 
 ![Earth & Sky — flat-map view 1](outputs/Earth-and-Sky/screenshots/Earth-and-Sky-Screenshot-1.jpg)
@@ -410,3 +412,9 @@ A per-user Windows installer can be built with Inno Setup 7. From the repository
 ### Linux AppImage packaging
 
 The repository includes `installer/linux/build-appimage.sh` to build and bundle a Linux x86_64 AppImage using a Linux Qt 6.8+ kit. See `installer/linux/README.md` for prerequisites and WSL commands. This packaging path is prepared but has not yet been validated on Linux.
+
+## License
+
+Original Earth & Sky code and build scripts are licensed under **GNU GPL v3.0 or later** ([LICENSE](LICENSE)). Copyright © 2026 cbsom and contributors. You may use, modify and redistribute the application under those terms; it comes without warranty.
+
+Third-party components retain their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). The city list is adapted from [Simplemaps World Cities Database, free Basic edition](https://simplemaps.com/data/world-cities), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It retains country, city, latitude and longitude columns. The Moon photograph and its adaptations retain CC BY-SA 3.0.
