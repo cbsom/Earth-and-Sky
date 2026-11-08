@@ -2,7 +2,7 @@
 
 ![Earth & Sky — flat-map view](screenshots/flat-map.png)
 
-**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/Earth-and-Sky-v0.1.0)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
+**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
 
 A fully offline Qt Quick desktop application with a high-resolution world map,
 daylight and twilight shading, the Sun and Moon, five planets, and all 88
@@ -201,6 +201,12 @@ Original Earth & Sky code and build scripts are licensed under **GNU GPL v3.0 or
 
 Third-party components retain their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). The city list is adapted from [Simplemaps World Cities Database, free Basic edition](https://simplemaps.com/data/world-cities), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It retains country, city, latitude and longitude columns. The Moon photograph and its adaptations retain CC BY-SA 3.0.
 
-## Version 0.1.1 — in preparation
+## Version 0.1.1 — released 2026-11-08
 
-The footer shows the application version beside EARTH & SKY. Build metadata and Windows/Linux package versions are set to 0.1.1. Download links above still point to the published 0.1.0 release until 0.1.1 is available.
+[Earth & Sky v0.1.1](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1) is available for Windows and Linux.
+
+- Time animation keeps the Sun or Moon centered when viewing Earth from that body.
+- The footer shows a small application version label beside EARTH & SKY.
+- Application, Windows file metadata, and package versions are 0.1.1.
+- Packages include GPL-3.0-or-later application licensing and third-party notices, including Simplemaps city-data attribution.
+- A source snapshot with per-file hashes is available alongside the binaries.

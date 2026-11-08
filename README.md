@@ -2,7 +2,7 @@
 
 An offline desktop app for exploring Earth and the sky, with flat-map and globe views, daylight and twilight, the Sun, Moon, planets, and all 88 constellations.
 
-**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/Earth-and-Sky-v0.1.0)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
+**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
 
 Earth & Sky displays a high-resolution world map in a single window. The daylight side stays bright, the night side is shaded, and a smooth transition shows twilight. A subtle line marks the approximate sunrise/sunset boundary. Sun, Moon, and planet markers show the points on Earth directly beneath them. The Moon uses a real photograph shaded to its phase at the displayed time. All 88 constellations are available as individually positioned principal stars joined in conventional patterns, with a separate zodiac-only switch and a faint ecliptic tracing the Solar System’s reference plane.
 
@@ -20,7 +20,7 @@ The application is built with **C++17 and Qt Quick/QML**. It runs locally, works
 ## Features
 
 - High-resolution flat world map and an interactive globe with a surrounding celestial sphere.
-- **Show Earth from: Sun / Moon** buttons to switch to the globe and center the selected body in one click.
+- **Show Earth from: Sun / Moon** buttons to switch to the globe and center the selected body in one click; time animation keeps that body centered.
 - Live daylight and night shading, with a gradual twilight transition.
 - A thin, subdued sunrise/sunset boundary.
 - Current Sun, Moon, Mercury, Venus, Mars, Jupiter, and Saturn positions over Earth.
@@ -40,19 +40,19 @@ The application is built with **C++17 and Qt Quick/QML**. It runs locally, works
 
 ## Download and install
 
-Download **Earth & Sky v0.1.0** from the [GitHub release](https://github.com/cbsom/Earth-and-Sky/releases/tag/Earth-and-Sky-v0.1.0). Choose one package for your operating system:
+Download **Earth & Sky v0.1.1** from the [GitHub release](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1). Choose one package for your operating system:
 
 | Operating system | Download | Installation |
 | --- | --- | --- |
-| Windows 10/11, x64 | [Windows setup](https://github.com/cbsom/Earth-and-Sky/releases/download/Earth-and-Sky-v0.1.0/Earth-and-Sky-0.1.0-Windows-x64-Setup.exe) | Run the installer; creates a Start menu entry. |
-| Linux Mint 22 / Ubuntu 24.04, x86_64 | [Debian package (.deb)](https://github.com/cbsom/Earth-and-Sky/releases/download/Earth-and-Sky-v0.1.0/Earth-and-Sky-0.1.0-Linux-amd64.deb) | Installs through the package manager and adds an application menu entry. |
-| Linux x86_64, portable | [AppImage](https://github.com/cbsom/Earth-and-Sky/releases/download/Earth-and-Sky-v0.1.0/Earth-and-Sky-0.1.0-Linux-x86_64.AppImage) | Make executable and run; no system-wide installation. |
+| Windows 10/11, x64 | [Windows setup](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Windows-x64-Setup.exe) | Run the installer; creates a Start menu entry. |
+| Linux Mint 22 / Ubuntu 24.04, x86_64 | [Debian package (.deb)](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Linux-amd64.deb) | Installs through the package manager and adds an application menu entry. |
+| Linux x86_64, portable | [AppImage](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Linux-x86_64.AppImage) | Make executable and run; no system-wide installation. |
 
 These packages include Qt. You do not need to install Qt, CMake, a compiler, or download the source code to use the application. Linux still needs compatible system and graphics libraries. The Linux packages were built on Mint 22.3 (Ubuntu 24.04 base); compatibility with older distributions and ARM64 has not been validated. No macOS installer is available for this release.
 
 ### Windows
 
-1. Download and run `Earth-and-Sky-0.1.0-Windows-x64-Setup.exe`.
+1. Download and run `Earth-and-Sky-0.1.1-Windows-x64-Setup.exe`.
 2. Follow the setup wizard. Installation is for your current Windows account and does not require administrator privileges.
 3. Optionally select a desktop shortcut, then launch **Earth & Sky** from the Start menu or at the end of setup.
 
@@ -60,10 +60,10 @@ To update, close the application and run the newer installer. To uninstall, use 
 
 ### Linux Mint / Ubuntu: install the .deb
 
-Download `Earth-and-Sky-0.1.0-Linux-amd64.deb`. Open a terminal in the folder containing the download and run:
+Download `Earth-and-Sky-0.1.1-Linux-amd64.deb`. Open a terminal in the folder containing the download and run:
 
 ```bash
-sudo apt install ./Earth-and-Sky-0.1.0-Linux-amd64.deb
+sudo apt install ./Earth-and-Sky-0.1.1-Linux-amd64.deb
 ```
 
 Launch **Earth & Sky** from the application menu, or run:
@@ -82,17 +82,17 @@ Saved preferences are retained. This package targets Mint 22 / Ubuntu 24.04 x86_
 
 ### Linux: run the portable AppImage
 
-Download `Earth-and-Sky-0.1.0-Linux-x86_64.AppImage`. In the folder containing the download, run:
+Download `Earth-and-Sky-0.1.1-Linux-x86_64.AppImage`. In the folder containing the download, run:
 
 ```bash
-chmod +x Earth-and-Sky-0.1.0-Linux-x86_64.AppImage
-./Earth-and-Sky-0.1.0-Linux-x86_64.AppImage
+chmod +x Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
+./Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
 ```
 
 If FUSE is unavailable, use extraction mode instead:
 
 ```bash
-APPIMAGE_EXTRACT_AND_RUN=1 ./Earth-and-Sky-0.1.0-Linux-x86_64.AppImage
+APPIMAGE_EXTRACT_AND_RUN=1 ./Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
 ```
 
 The AppImage does not automatically create an application menu entry. Keep it in a permanent folder if you create a launcher for it. To update, close the application and replace the AppImage with the newer download. To remove it, delete the AppImage and any launcher you created; saved preferences are retained.
@@ -102,12 +102,12 @@ The AppImage does not automatically create an application menu entry. Keep it in
 Download the matching `.sha256` file from the release into the same folder as the package, then run the appropriate command:
 
 ```bash
-sha256sum -c Earth-and-Sky-0.1.0-Linux-amd64.deb.sha256
+sha256sum -c Earth-and-Sky-0.1.1-Linux-amd64.deb.sha256
 # Or, for the AppImage:
-sha256sum -c Earth-and-Sky-0.1.0-Linux-x86_64.AppImage.sha256
+sha256sum -c Earth-and-Sky-0.1.1-Linux-x86_64.AppImage.sha256
 ```
 
-A matching download prints `OK`. Choose the installer or AppImage linked above for normal use; the compiler-specific archives and GitHub's source-code archives are separate developer downloads.
+A matching download prints `OK`. Choose the installer or AppImage linked above for normal use. Developers can download the [v0.1.1 source snapshot](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Source.zip) and its matching `.sha256` file from the release. The snapshot contains application source and a per-file hash manifest; it does not include Qt source or the SDK.
 
 ## Build on Windows
 
@@ -411,7 +411,7 @@ A per-user Windows installer can be built with Inno Setup 7. From the repository
 
 ### Linux AppImage packaging
 
-The repository includes `installer/linux/build-appimage.sh` to build and bundle a Linux x86_64 AppImage using a Linux Qt 6.8+ kit. See `installer/linux/README.md` for prerequisites and WSL commands. This packaging path is prepared but has not yet been validated on Linux.
+The repository includes `installer/linux/build-appimage.sh` to build and bundle a Linux x86_64 AppImage using a Linux Qt 6.8+ kit. See `installer/linux/README.md` for prerequisites and WSL commands. AppImage and Debian packages are published for v0.1.1. The [Linux validation report](installer/linux/VALIDATION.md) records earlier v0.1.0 checks; validation of the v0.1.1 assets should be recorded separately.
 
 ## License
 
@@ -419,6 +419,12 @@ Original Earth & Sky code and build scripts are licensed under **GNU GPL v3.0 or
 
 Third-party components retain their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). The city list is adapted from [Simplemaps World Cities Database, free Basic edition](https://simplemaps.com/data/world-cities), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It retains country, city, latitude and longitude columns. The Moon photograph and its adaptations retain CC BY-SA 3.0.
 
-## Version 0.1.1 — in preparation
+## Version 0.1.1 — released 2026-11-08
 
-The footer shows the application version beside EARTH & SKY. Build metadata and Windows/Linux package versions are set to 0.1.1. Download links above still point to the published 0.1.0 release until 0.1.1 is available.
+[Earth & Sky v0.1.1](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1) is available for Windows and Linux.
+
+- Time animation keeps the Sun or Moon centered when viewing Earth from that body.
+- The footer shows a small application version label beside EARTH & SKY.
+- Application, Windows file metadata, and package versions are 0.1.1.
+- Packages include GPL-3.0-or-later application licensing and third-party notices, including Simplemaps city-data attribution.
+- A source snapshot with per-file hashes is available alongside the binaries.
