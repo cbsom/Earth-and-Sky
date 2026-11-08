@@ -6,13 +6,13 @@ An offline desktop app for exploring Earth and the sky, with flat-map and globe 
 
 Earth & Sky displays a high-resolution world map in a single window. The daylight side stays bright, the night side is shaded, and a smooth transition shows twilight. A subtle line marks the approximate sunrise/sunset boundary. Sun, Moon, and planet markers show the points on Earth directly beneath them. The Moon uses a real photograph shaded to its phase at the displayed time. All 88 constellations are available as individually positioned principal stars joined in conventional patterns, with a separate zodiac-only switch and a faint ecliptic tracing the Solar System’s reference plane.
 
-![Earth & Sky — flat-map view 1](outputs/Earth-and-Sky/screenshots/Earth-and-Sky-Screenshot-1.jpg)
+![Earth & Sky — v0.1.1 flat-map view with zodiac constellations](outputs/Earth-and-Sky/screenshots/Earth-and-Sky-Screenshot-1.jpg)
 
-![Earth & Sky — globe-map view 1](outputs/Earth-and-Sky/screenshots/Earth-and-Sky-Screenshot-2.jpg)
+![Earth & Sky — v0.1.1 globe view with zodiac constellations](outputs/Earth-and-Sky/screenshots/Earth-and-Sky-Screenshot-2.jpg)
 
-![Earth & Sky — flat-map view 2](outputs/Earth-and-Sky/screenshots/flat-map.png)
+![Earth & Sky — v0.1.1 flat-map view with all constellations](outputs/Earth-and-Sky/screenshots/flat-map.png)
 
-![Earth & Sky — globe-map view 2](outputs/Earth-and-Sky/screenshots/globe.png)
+![Earth & Sky — v0.1.1 globe view with all constellations](outputs/Earth-and-Sky/screenshots/globe.png)
 
 
 The application is built with **C++17 and Qt Quick/QML**. It runs locally, works offline, and updates every 30 seconds in live mode using the computer's current time. Time navigation can hold the entire sky at a selected instant. There are no accounts, API keys, map servers, or runtime downloads.

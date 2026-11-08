@@ -1,6 +1,6 @@
 # Earth & Sky
 
-![Earth & Sky — flat-map view](screenshots/flat-map.png)
+![Earth & Sky — v0.1.1 flat-map view with all constellations](screenshots/flat-map.png)
 
 **[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
 
