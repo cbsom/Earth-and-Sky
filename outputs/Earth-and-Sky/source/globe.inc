@@ -26,7 +26,7 @@ void GlobeView::mouseMoveEvent(QMouseEvent* e) {
     if(!mDragging)return;
     auto delta=e->position()-mPress;
     if(std::hypot(delta.x(),delta.y())>4)mMoved=true;
-    if(mMoved){setYaw(mPressYaw-delta.x()*.35/mZoom);setPitch(mPressPitch+delta.y()*.35/mZoom);}
+    if(mMoved){mFollowBody.clear();setYaw(mPressYaw-delta.x()*.35/mZoom);setPitch(mPressPitch+delta.y()*.35/mZoom);}
     e->accept();
 }
 void GlobeView::mouseReleaseEvent(QMouseEvent* e) {

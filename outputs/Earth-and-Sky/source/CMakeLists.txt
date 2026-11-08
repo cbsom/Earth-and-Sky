@@ -4,7 +4,7 @@ if(POLICY CMP0141)
     cmake_policy(SET CMP0141 NEW)
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
 endif()
-project(EarthSky VERSION 0.1 LANGUAGES C CXX)
+project(EarthSky VERSION 0.1.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 find_package(Qt6 6.8 REQUIRED COMPONENTS Quick)
 qt_standard_project_setup(REQUIRES 6.8)
@@ -16,6 +16,7 @@ endif()
 qt_add_qml_module(EarthSky URI EarthSky VERSION 1.0 QML_FILES Main.qml
     RESOURCES data/zodiac.json data/constellations.json data/D3-CELESTIAL-LICENSE assets/worldcities_list.csv assets/world.jpg assets/moon-full.jpg assets/earth-and-sky.ico)
 target_link_libraries(EarthSky PRIVATE Qt6::Quick)
+target_compile_definitions(EarthSky PRIVATE EARTH_SKY_VERSION="${PROJECT_VERSION}")
 install(TARGETS EarthSky RUNTIME DESTINATION .)
 
 # Retain licensing with CMake-installed binaries.

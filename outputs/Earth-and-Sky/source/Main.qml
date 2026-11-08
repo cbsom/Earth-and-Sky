@@ -756,6 +756,16 @@ Window {
             color: "#8197aa"
         }
         Text {
+            objectName: "applicationVersionLabel"
+            anchors.left: titleText.right
+            anchors.leftMargin: 8
+            anchors.baseline: titleText.baseline
+            text: "v" + Qt.application.version
+            font.family: "Segoe UI"
+            font.pixelSize: 9
+            color: "#657e92"
+        }
+        Text {
             x: togglesRow.x; y: togglesRow.y - 16
             text: "LAYERS"; font.family: "Segoe UI"; font.pixelSize: 9; font.letterSpacing: 1.2; color: "#758e9f"
         }
@@ -843,7 +853,7 @@ Window {
                                 anchors.fill: parent
                                 objectName: modelData === "Sun" ? "earthFromSunButton" : "earthFromMoonButton"
                                 label: modelData
-                                description: "Show the globe with the " + modelData + " centered; drag to turn afterwards"
+                                description: "Keep the " + modelData + " centered as time changes; drag to turn afterwards"
                                 onTriggered: window.showEarthFrom(modelData)
                             }
                         }

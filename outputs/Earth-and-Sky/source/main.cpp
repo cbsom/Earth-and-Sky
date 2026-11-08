@@ -629,6 +629,7 @@ class GlobeView : public QQuickPaintedItem {
     Q_PROPERTY(double pitch READ pitch WRITE setPitch NOTIFY viewChanged)
     Q_PROPERTY(double zoom READ zoom WRITE setZoom NOTIFY viewChanged)
     Sky* mSky=nullptr;
+    QString mFollowBody;
     QVariantMap mLayers;
     bool mHorizon=false,mDragging=false,mMoved=false,mDirty=true;
     QPointF mObserver,mPress;
@@ -668,8 +669,8 @@ public:
         if(mSky) disconnect(mSky,nullptr,this,nullptr);
         mSky=qobject_cast<Sky*>(object);
         if(mSky) {
-            connect(mSky,&Sky::changed,this,[this]{invalidate();});
-            connect(mSky,&Sky::viewChanged,this,[this]{invalidate();});
+            connect(mSky,&Sky::changed,this,[this]{followBody();invalidate();});
+            connect(mSky,&Sky::viewChanged,this,[this]{followBody();invalidate();});
         }
         emit optionsChanged();
     }
@@ -681,11 +682,16 @@ public:
     void setYaw(double value) { value=wrap(value);if(qFuzzyCompare(value+181,mYaw+181))return;mYaw=value;mCy=std::cos(rad(value));mSy=std::sin(rad(value));invalidate();emit viewChanged(); }
     void setPitch(double value) { value=std::clamp(value,-90.0,90.0);if(value==mPitch)return;mPitch=value;mCp=std::cos(rad(value));mSp=std::sin(rad(value));invalidate();emit viewChanged(); }
     void setZoom(double value) { value=std::clamp(value,.65,6.0);if(value==mZoom)return;mZoom=value;invalidate();emit viewChanged(); }
-    Q_INVOKABLE void fitView() { setYaw(0);setPitch(15);setZoom(1.36); }
-    Q_INVOKABLE void centerOn(double lon,double lat) { setYaw(lon+(mSky?mSky->earthOffset()*360:0));setPitch(lat); }
+    Q_INVOKABLE void fitView() { mFollowBody.clear();setYaw(0);setPitch(15);setZoom(1.36); }
+    Q_INVOKABLE void centerOn(double lon,double lat) { mFollowBody.clear();setYaw(lon+(mSky?mSky->earthOffset()*360:0));setPitch(lat); }
     Q_INVOKABLE void centerOnBody(const QString& name) {
         if(!mSky || (name!="Sun" && name!="Moon"))return;
-        const auto point=name=="Sun"?mSky->e.sun:mSky->e.moon;
+        mFollowBody=name;
+        followBody();
+    }
+    void followBody() {
+        if(!mSky || mFollowBody.isEmpty())return;
+        const auto point=mFollowBody=="Sun"?mSky->e.sun:mSky->e.moon;
         setYaw(point.lon+mSky->skyOffset()*360);
         setPitch(point.lat);
     }
@@ -814,6 +820,7 @@ int main(int argc, char **argv)
     QGuiApplication app(argc, argv);
     app.setApplicationName("EarthSky");
     app.setApplicationDisplayName("Earth & Sky");
+    app.setApplicationVersion(QStringLiteral(EARTH_SKY_VERSION));
     app.setOrganizationName("EarthSky");
     app.setWindowIcon(QIcon(":/qt/qml/EarthSky/assets/earth-and-sky.ico"));
     if (app.arguments().contains("--self-test"))

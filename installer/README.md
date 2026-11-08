@@ -6,7 +6,7 @@ Install Inno Setup 7, then run from the repository root:
 installer\build-installer.cmd
 ```
 
-An optional first argument is the full path to `ISCC.exe`. Build and deploy the current application into `outputs/Earth-and-Sky/app` first; this command packages that folder and does not rebuild C++. The installer is written to `outputs/installers/Earth-and-Sky-0.1.0-Windows-x64-Setup.exe`.
+An optional first argument is the full path to `ISCC.exe`. Build and deploy the current application into `outputs/Earth-and-Sky/app` first; this command packages that folder and does not rebuild C++. The installer is written to `outputs/installers/Earth-and-Sky-0.1.1-Windows-x64-Setup.exe`.
 
 The installer targets Windows 10/11 x64 (including x64 emulation on ARM64), installs for the current user under `%LOCALAPPDATA%\Programs\Earth-and-Sky`, and requires no administrator elevation. It creates a Start menu shortcut and offers an optional desktop shortcut and launch checkbox. Windows Settings can uninstall it. Saved home city, view, and layer preferences are retained during upgrades and uninstall.
 

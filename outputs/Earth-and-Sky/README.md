@@ -200,3 +200,7 @@ The repository includes `installer/linux/build-appimage.sh` to build and bundle 
 Original Earth & Sky code and build scripts are licensed under **GNU GPL v3.0 or later** ([LICENSE](LICENSE)). Copyright © 2026 cbsom and contributors. You may use, modify and redistribute the application under those terms; it comes without warranty.
 
 Third-party components retain their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). The city list is adapted from [Simplemaps World Cities Database, free Basic edition](https://simplemaps.com/data/world-cities), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It retains country, city, latitude and longitude columns. The Moon photograph and its adaptations retain CC BY-SA 3.0.
+
+## Version 0.1.1 — in preparation
+
+The footer shows the application version beside EARTH & SKY. Build metadata and Windows/Linux package versions are set to 0.1.1. Download links above still point to the published 0.1.0 release until 0.1.1 is available.
