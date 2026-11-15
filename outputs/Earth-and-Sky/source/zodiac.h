@@ -89,10 +89,10 @@ ZodiacFrame calculateZodiac(astro_time_t time) {
     }
     return frame;
 }
-QPointF mapPoint(Position point,QSize size) {
+QPointF mapPoint(Position point,QSizeF size) {
     return {(point.lon+180)/360*size.width(),(90-point.lat)/180*size.height()};
 }
-void drawWrappedSegment(QPainter& painter,QSize size,Position a,Position b) {
+void drawWrappedSegment(QPainter& painter,QSizeF size,Position a,Position b) {
     auto start=mapPoint(a,size),end=mapPoint(b,size);
     double width=size.width();
     if(end.x()-start.x()>width/2) end.rx()-=width;
@@ -109,19 +109,19 @@ Position interpolateSky(Position a,Position b,double fraction) {
     double z=(1-fraction)*std::sin(rad(a.lat))+fraction*std::sin(rad(b.lat));
     return {std::atan2(z,std::hypot(x,y))*180/pi,std::atan2(y,x)*180/pi};
 }
-QImage zodiacImage(const ZodiacFrame& frame,QSize size,bool showLabels=true,bool showAll=false) {
-    QImage image(size,QImage::Format_ARGB32_Premultiplied); image.fill(Qt::transparent);
-    QPainter painter(&image); painter.setRenderHint(QPainter::Antialiasing);
+void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool showLabels=true,bool showAll=false) {
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
     // Widths and dots are in display pixels, so enlarging the map stays restrained.
     painter.setPen(QPen(QColor(166,166,200,65),.65));
     for(size_t i=1;i<frame.ecliptic.size();++i)
         drawWrappedSegment(painter,size,frame.ecliptic[i-1],frame.ecliptic[i]);
     const auto& catalog=zodiacCatalog(showAll);
-    QFont font("Segoe UI"); font.setPixelSize(9); font.setWeight(QFont::Medium);
+    QFont font("Segoe UI"); font.setPixelSize(10); font.setWeight(QFont::Normal);
     painter.setFont(font);
     for(size_t i=0;i<catalog.size();++i) {
         const auto& figure=catalog[i]; const auto& points=frame.figures[i];
-        painter.setPen(QPen(QColor(163,169,177,110),.8));
+        painter.setPen(QPen(QColor(163,169,177,80),.65));
         for(auto [a,b] : figure.lines) {
             auto previous=points[a];
             const double cosine=std::sin(rad(points[a].lat))*std::sin(rad(points[b].lat))+std::cos(rad(points[a].lat))*std::cos(rad(points[b].lat))*std::cos(rad(points[b].lon-points[a].lon));
@@ -147,13 +147,17 @@ QImage zodiacImage(const ZodiacFrame& frame,QSize size,bool showLabels=true,bool
         double advance=painter.fontMetrics().horizontalAdvance(figure.name);
         for(int copy=-1;copy<=1;++copy) {
             const double labelX=center+copy*size.width()-advance/2;
-            if(labelX+advance< -3 || labelX>size.width()+3) continue;
             QPainterPath label;
             label.addText(QPointF(labelX,
                                  std::min(double(size.height()-3),bottom+3+painter.fontMetrics().ascent())),font,figure.name);
-            painter.strokePath(label,QPen(QColor(8,15,24,220),2.5,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
-            painter.fillPath(label,QColor(180,186,194));
+            painter.strokePath(label,QPen(QColor(8,15,24,200),2,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+            painter.fillPath(label,QColor(153,153,153));
         }
     }
+}
+QImage zodiacImage(const ZodiacFrame& frame,QSize size,bool showLabels=true,bool showAll=false) {
+    QImage image(size,QImage::Format_ARGB32_Premultiplied);image.fill(Qt::transparent);
+    QPainter painter(&image);
+    paintZodiac(painter,frame,size,showLabels,showAll);
     return image;
 }

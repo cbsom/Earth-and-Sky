@@ -11,7 +11,7 @@ sudo apt update
 sudo apt install build-essential cmake ninja-build curl desktop-file-utils dpkg-dev binutils libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libegl1
 ```
 
-Install the Linux desktop **Qt 6.8.3 gcc_64** kit using the Qt installer, including Qt Quick/QML and Qt SVG. For an existing Qt kit, use its actual path in the command below. A Windows MSVC Qt kit cannot be used, and Qt 6.4.2 is too old. Installing Qt in WSL is separate from the kit on your dual-boot Mint partition.
+Install the Linux desktop **Qt 6.8.3 gcc_64** kit using the Qt installer, including Qt Quick/QML, QtQuick.Dialogs and Qt SVG. For an existing Qt kit, use its actual path in the command below. A Windows MSVC Qt kit cannot be used, and Qt 6.4.2 is too old. Installing Qt in WSL is separate from the kit on your dual-boot Mint partition.
 
 ## Build
 
@@ -26,16 +26,16 @@ On native Linux, use the path to your checkout instead. Builds are faster in the
 
 The script downloads the official linuxdeploy and Qt-plugin AppImages on first use and caches them under `work/appimage/tools`. Internet is needed for that first download. These tools use upstream continuous builds; their SHA-256 values are recorded alongside the result. Cached tools can be replaced manually when intentionally updating the packaging toolchain.
 
-Result: `outputs/installers/Earth-and-Sky-0.1.1-Linux-x86_64.AppImage` plus a checksum. The script runs built-in checks before and after bundling with isolated test preferences. Qt dependencies are bundled; core system and graphics libraries still come from Linux. Build-tool execution uses extraction mode, so it does not require FUSE in WSL. Work directories and generated packages are ignored by Git.
+Result: `outputs/installers/Earth-and-Sky-1.0.0-Linux-x86_64.AppImage` plus a checksum. The script runs built-in checks before and after bundling with isolated test preferences. Qt dependencies are bundled; core system and graphics libraries still come from Linux. Build-tool execution uses extraction mode, so it does not require FUSE in WSL. Work directories and generated packages are ignored by Git.
 
 ## Run and validate
 
 ```sh
-chmod +x outputs/installers/Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
-./outputs/installers/Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
+chmod +x outputs/installers/Earth-and-Sky-1.0.0-Linux-x86_64.AppImage
+./outputs/installers/Earth-and-Sky-1.0.0-Linux-x86_64.AppImage
 ```
 
-If FUSE is unavailable, try `APPIMAGE_EXTRACT_AND_RUN=1 ./outputs/installers/Earth-and-Sky-0.1.1-Linux-x86_64.AppImage`. Test the GUI on Linux Mint, including Globe, Flat map, city search, saved settings, animation, and mouse input. An AppImage is a portable executable rather than a traditional package-manager installer.
+If FUSE is unavailable, try `APPIMAGE_EXTRACT_AND_RUN=1 ./outputs/installers/Earth-and-Sky-1.0.0-Linux-x86_64.AppImage`. Test the GUI on Linux Mint, including Globe, Flat map, city search, saved settings, animation, and mouse input. An AppImage is a portable executable rather than a traditional package-manager installer.
 
 Build on the oldest Linux base you intend to support; newer glibc dependencies can prevent running on older distributions. No minimum supported distro is claimed until the resulting package is tested there. The SDK license directory is copied when available; review all Qt and third-party notices/source obligations before publishing.
 
@@ -43,7 +43,7 @@ References: [linuxdeploy](https://github.com/linuxdeploy/linuxdeploy), [Qt plugi
 
 ## Debian / Ubuntu / Mint installer
 
-`build-packages.sh` builds the AppImage and then an `amd64.deb` using the same bundled runtime. Both package versions come from `AppVersion` in `installer/Earth-and-Sky.iss`, currently 0.1.1. Build tools are not required on the recipient's computer.
+`build-packages.sh` builds the AppImage and then an `amd64.deb` using the same bundled runtime. Both package versions come from `AppVersion` in `installer/Earth-and-Sky.iss`, currently 1.0.0. Build tools are not required on the recipient's computer.
 
 On native Mint, build both with:
 
@@ -63,7 +63,7 @@ The package installs a private runtime under `/opt/earth-and-sky`, a command `/u
 Install and remove:
 
 ```sh
-sudo apt install ./outputs/installers/Earth-and-Sky-0.1.1-Linux-amd64.deb
+sudo apt install ./outputs/installers/Earth-and-Sky-1.0.0-Linux-amd64.deb
 earth-and-sky
 sudo apt remove earth-and-sky
 ```

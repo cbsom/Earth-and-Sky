@@ -62,14 +62,14 @@ void GlobeView::paintSky(QPainter* p,bool front) {
         }
         auto start=view(a),end=view(b);
         if((start.z+end.z>=0)!=front)return;
-        color.setAlphaF(color.alphaF()*(front?1.0:.28));p->setPen(QPen(color,.8));
+        color.setAlphaF(color.alphaF()*(front?1.0:.28));p->setPen(QPen(color,.65));
         start.x*=distance;start.y*=distance;end.x*=distance;end.y*=distance;p->drawLine(pixel(start),pixel(end));
     };
     auto line=[&](Position a,Position b,QColor color) { worldLine(direction(a.lon+skyTurn,a.lat),direction(b.lon+skyTurn,b.lat),color); };
     if(layer("zodiac") || layer("allConstellations")) {
         for(size_t i=1;i<mSky->e.zodiac.ecliptic.size();++i)
             line(mSky->e.zodiac.ecliptic[i-1],mSky->e.zodiac.ecliptic[i],QColor(166,166,200,65));
-        p->setFont(QFont("Segoe UI",8));
+        QFont constellationFont("Segoe UI");constellationFont.setPixelSize(10);p->setFont(constellationFont);
         for(size_t i=0;i<catalog.size();++i) {
             const auto& f=catalog[i];const auto& points=mSky->e.zodiac.figures[i];
             for(auto [a,b]:f.lines) {
@@ -78,7 +78,7 @@ void GlobeView::paintSky(QPainter* p,bool front) {
                 // About 20 screen pixels per chord: smooth arcs without oversampling.
                 const int segments=std::clamp(int(std::ceil(angle*shell*radius()/20)),1,96);
                 auto prev=start;
-                for(int step=1;step<=segments;++step){double t=double(step)/segments;V next{start.x*(1-t)+end.x*t,start.y*(1-t)+end.y*t,start.z*(1-t)+end.z*t};double norm=std::sqrt(next.x*next.x+next.y*next.y+next.z*next.z);next.x/=norm;next.y/=norm;next.z/=norm;worldLine(prev,next,QColor(163,169,177,140));prev=next;}
+                for(int step=1;step<=segments;++step){double t=double(step)/segments;V next{start.x*(1-t)+end.x*t,start.y*(1-t)+end.y*t,start.z*(1-t)+end.z*t};double norm=std::sqrt(next.x*next.x+next.y*next.y+next.z*next.z);next.x/=norm;next.y/=norm;next.z/=norm;worldLine(prev,next,QColor(163,169,177,100));prev=next;}
             }
             V mean{0,0,0};
             for(size_t j=0;j<points.size();++j) {
@@ -91,7 +91,7 @@ void GlobeView::paintSky(QPainter* p,bool front) {
             const bool labelVisible=!mHorizon || mean.x*observerView.x+mean.y*observerView.y+mean.z*observerView.z>=0;
             if(layer("labels") && labelVisible && (mean.z>=0)==front) {
                 double count=points.size();mean.x/=count;mean.y/=count;mean.z/=count;
-                auto pos=pixel(mean);p->setOpacity(front?1.0:.22);p->setPen(QColor(184,194,203));
+                auto pos=pixel(mean);p->setOpacity(front?1.0:.22);p->setPen(QColor(153,153,153));
                 QRectF text(pos.x()-60,pos.y()+5,120,18);p->drawText(text,Qt::AlignHCenter|Qt::AlignTop,f.name);p->setOpacity(1);
             }
         }
@@ -101,13 +101,30 @@ void GlobeView::paintSky(QPainter* p,bool front) {
     static const std::array<QImage,7> planetTextures={QImage(),QImage(),planetImage(2),planetImage(3),planetImage(4),planetImage(5),planetImage(6)};
     std::array<int,7> order={0,1,2,3,4,5,6};
     std::sort(order.begin(),order.end(),[&](int a,int b){return mSky->e.bodies[a].distance>mSky->e.bodies[b].distance;});
+    QVector<QRectF> labelObstacles;
+    for(int i:order) {
+        if(!(i==0?layer("sun"):i==1?layer("moon"):layer("planets")))continue;
+        auto point=mSky->e.bodies[i].point;auto v=vectorAt(point,shell);
+        if((v.z>=0)!=front || skyFade(point)==0)continue;
+        const auto pos=pixel(v);const double size=sizes[i];
+        labelObstacles.append(QRectF(pos.x()-size/2,pos.y()-size/2,size,size));
+    }
     for(int i:order) {
         if(!(i==0?layer("sun"):i==1?layer("moon"):layer("planets")))continue;
         auto point=mSky->e.bodies[i].point;auto v=vectorAt(point,shell);if((v.z>=0)!=front || skyFade(point)==0)continue;
         auto pos=pixel(v);double size=sizes[i];p->setOpacity(skyFade(point)*(front?1.0:.65));
         const QImage image=i==0?mSky->sun:i==1?mSky->moon:planetTextures[i];
         p->drawImage(QRectF(pos.x()-size/2,pos.y()-size/2,size,size),image);
-        if(layer("labels")){p->setFont(QFont("Segoe UI",8));p->setPen(QColor(198,211,221));p->drawText(QRectF(pos.x()-45,pos.y()+size/2+2,90,17),Qt::AlignHCenter,QString::fromLatin1(bodyNames[i]));}
+        if(layer("labels")) {
+            QFont font("Segoe UI");font.setPixelSize(12);p->setFont(font);
+            const auto text=QString::fromLatin1(bodyNames[i]);const QFontMetricsF metrics(font);
+            const auto rect=placeBodyLabel(pos,size,QSizeF(metrics.horizontalAdvance(text)+8,metrics.height()+2),QRectF(0,0,width(),height()),labelObstacles);
+            labelObstacles.append(rect);
+            QPainterPath path;path.addText(rect.left()+4,rect.top()+metrics.ascent(),font,text);
+            // Paint the outline first so it cannot obscure the bright glyph fill.
+            p->strokePath(path,QPen(QColor(12,23,34),1.5,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+            p->fillPath(path,QColor(225,235,243));
+        }
         p->setOpacity(1);
     }
 }

@@ -64,6 +64,7 @@ jobs:
         run: >
           cmake -S "${{ env.SOURCE_DIR }}" -B build
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DEARTH_SKY_BUILD_UI_TESTS=ON
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
 
@@ -72,6 +73,7 @@ jobs:
         run: >
           cmake -S "${{ env.SOURCE_DIR }}" -B build
           -G "Visual Studio 17 2022" -A x64
+          -DEARTH_SKY_BUILD_UI_TESTS=ON
 
       - name: Build
         run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
@@ -79,10 +81,11 @@ jobs:
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
         run: >
           ctest --test-dir build
           --build-config ${{ env.BUILD_TYPE }}
-          --output-on-failure
+          --output-on-failure --timeout 120
       
       - name: Package binaries (Linux)
         if: runner.os == 'Linux'
