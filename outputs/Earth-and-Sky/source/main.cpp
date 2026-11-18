@@ -615,6 +615,12 @@ public:
         const auto grab=qobject_cast<QQuickItemGrabResult*>(result);
         return writeScreenshot(grab?grab->image():QImage(),target,scale);
     }
+    Q_INVOKABLE QVariantMap datePickerFields(const QString& text,bool utc) const {
+        auto date=QDate::fromString(text,"yyyy-MM-dd");
+        if(!date.isValid() || date.year()<1 || date.year()>9999 || date.toString("yyyy-MM-dd")!=text)
+            date=(utc?displayedInstant.toUTC():displayedInstant.toLocalTime()).date();
+        return {{"year",date.year()},{"month",date.month()-1}};
+    }
     Q_INVOKABLE QVariantMap dateTimeFields(bool utc) const {
         const auto time=utc?displayedInstant.toUTC():displayedInstant.toLocalTime();
         return {{"date",time.toString("yyyy-MM-dd")},{"time",time.toString("HH:mm:ss")},

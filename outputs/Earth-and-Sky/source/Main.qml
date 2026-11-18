@@ -4,6 +4,7 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Dialogs
+import QtQuick.Controls.Basic as Controls
 import EarthSky.Globe 1.0
 
 Window {
@@ -53,7 +54,7 @@ Window {
         timeDialog.utc = false; timeDialog.error = ""; timeDialog.visible = true
         dateField.forceActiveFocus(); dateField.selectAll()
     }
-    function closeDateTime() { timeDialog.visible = false; dateTimeButton.forceActiveFocus() }
+    function closeDateTime() { calendarPopup.close(); timeDialog.visible = false; dateTimeButton.forceActiveFocus() }
     onGlobeModeChanged: { if (preferencesReady) sky.saveGlobeMode(globeMode) }
     function centerHome() {
         mapViewport.fitMap(); globe.fitView()
@@ -443,40 +444,86 @@ Window {
         observer: Qt.point(mapViewport.observerLongitude * 360 - 180, mapViewport.observerLatitude)
         onLocationSelected: (longitude, latitude) => { mapViewport.setObserver(longitude, latitude); globe.centerOn(longitude, latitude) }
     }
-    Rectangle {
-        anchors.left: parent.left; anchors.top: parent.top; anchors.margins: 10
-        width: 112; height: 28; radius: 6; z: 20
-        color: "#dd101d29"; border.color: "#344754"
-        TimeAction {
-            objectName: "flatMapViewButton"
-            x: 0; width: 56; height: 28
-            label: "Flat map"; highlighted: !window.globeMode
-            description: "View the sky above a flat world map"
-            onTriggered: window.globeMode = false
-        }
-        Rectangle { x: 56; y: 7; width: 1; height: 14; color: "#344754" }
-        TimeAction {
-            objectName: "globeViewButton"
-            x: 56; width: 56; height: 28
-            label: "Globe"; highlighted: window.globeMode
-            description: "View Earth inside a celestial sphere; drag to turn and scroll to zoom"
-            onTriggered: {
-                window.globeMode = true
-                if (mapViewport.horizonActive) globe.centerOn(mapViewport.observerLongitude * 360 - 180, mapViewport.observerLatitude)
+    component ToolbarAction: TimeAction {
+        id: tool
+        property string icon
+        width: 32; height: 32
+        label: ""
+        Rectangle { anchors.fill: parent; anchors.margins: 2; radius: 4; color: tool.highlighted ? "#203340" : "transparent"; z: -1 }
+        Canvas {
+            id: toolGlyph; anchors.centerIn: parent; width: 20; height: 20
+            opacity: tool.enabled ? 1 : .4
+            Connections { target: tool; function onHighlightedChanged() { toolGlyph.requestPaint() } function onIconChanged() { toolGlyph.requestPaint() } }
+            onPaint: {
+                const c = getContext("2d"); c.reset()
+                c.strokeStyle = tool.highlighted ? "#c1d2dc" : "#8b9eaa"; c.lineWidth = 1.3; c.lineCap = "round"; c.lineJoin = "round"
+                c.beginPath()
+                if (tool.icon === "map") {
+                    c.moveTo(2,4); c.lineTo(7,2); c.lineTo(13,4); c.lineTo(18,2); c.lineTo(18,16); c.lineTo(13,18); c.lineTo(7,16); c.lineTo(2,18); c.closePath()
+                    c.moveTo(7,2); c.lineTo(7,16); c.moveTo(13,4); c.lineTo(13,18)
+                } else if (tool.icon === "globe") {
+                    c.arc(10,10,8,0,2*Math.PI); c.moveTo(18,10); c.lineTo(2,10); c.moveTo(10,2); c.bezierCurveTo(3,6,3,14,10,18); c.bezierCurveTo(17,14,17,6,10,2)
+                } else if (tool.icon === "pin") {
+                    c.moveTo(10,19); c.bezierCurveTo(8,16,3,12,3,8); c.bezierCurveTo(3,-1,17,-1,17,8); c.bezierCurveTo(17,12,12,16,10,19); c.closePath(); c.stroke(); c.beginPath(); c.arc(10,7,2,0,2*Math.PI)
+                } else if (tool.icon === "info") {
+                    c.arc(10,10,8,0,2*Math.PI); c.stroke(); c.beginPath()
+                    c.moveTo(10,9); c.lineTo(10,14); c.moveTo(8,14); c.lineTo(12,14)
+                    c.moveTo(8,9); c.lineTo(10,9); c.moveTo(10,6); c.lineTo(10,6.3)
+                } else if (tool.icon === "calendar") {
+                    c.rect(2,4,16,14); c.moveTo(2,8); c.lineTo(18,8); c.moveTo(6,2); c.lineTo(6,6); c.moveTo(14,2); c.lineTo(14,6)
+                    c.moveTo(6,11); c.lineTo(7,11); c.moveTo(12,11); c.lineTo(13,11); c.moveTo(6,14); c.lineTo(7,14)
+                } else if (tool.icon === "camera") {
+                    c.moveTo(2,6); c.lineTo(6,6); c.lineTo(8,3); c.lineTo(13,3); c.lineTo(15,6); c.lineTo(18,6); c.lineTo(18,17); c.lineTo(2,17); c.closePath(); c.stroke(); c.beginPath(); c.arc(10,11,3,0,2*Math.PI)
+                }
+                c.stroke()
             }
         }
     }
     Rectangle {
-        anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 10
-        width: Math.max(100, homeCityTextMetrics.width + 28); height: 28; radius: 6; z: 20
-        TextMetrics { id: homeCityTextMetrics; text: homeCityAction.label; font.family: "Segoe UI"; font.pixelSize: 11 }
-        color: "#dd101d29"; border.color: "#344754"
-        TimeAction {
-            id: homeCityAction
-            anchors.fill: parent; objectName: "homeCityButton"
-            label: window.homeCity.name ? window.homeCity.name.substring(0, window.homeCity.name.lastIndexOf(", ")) : "Home city…"
-            description: window.homeCity.name ? "Home: " + window.homeCity.name : "Choose your home city"
-            onTriggered: { cityDialog.visible = true; citySearch.forceActiveFocus() }
+        id: viewToolbar; objectName: "viewToolbar"
+        anchors.left: parent.left; anchors.top: parent.top; anchors.margins: 8
+        width: viewActions.width + 8; height: 36; radius: 6; z: 40
+        color: "#b30b131d"; border.color: "#293a47"
+        Accessible.role: Accessible.ToolBar; Accessible.name: "Map view tools"
+        Row {
+            id: viewActions; x: 4; y: 2; spacing: 2
+            ToolbarAction {
+                objectName: "globeViewButton"; icon: "globe"; highlighted: window.globeMode
+                description: "Globe — drag to turn and scroll to zoom"
+                Accessible.role: Accessible.RadioButton; Accessible.checkable: true; Accessible.checked: window.globeMode
+                onTriggered: { window.globeMode = true; if (mapViewport.horizonActive) globe.centerOn(mapViewport.observerLongitude * 360 - 180, mapViewport.observerLatitude) }
+            }
+            ToolbarAction {
+                objectName: "flatMapViewButton"; icon: "map"; highlighted: !window.globeMode
+                description: "Flat map — view the sky above a flat world map"
+                Accessible.role: Accessible.RadioButton; Accessible.checkable: true; Accessible.checked: !window.globeMode
+                onTriggered: window.globeMode = false
+            }
+        }
+    }
+    Rectangle {
+        id: topToolbar; objectName: "topToolbar"
+        anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 8
+        width: toolbarActions.width + 8; height: 36; radius: 6; z: 40
+        color: "#b30b131d"; border.color: "#293a47"
+        Accessible.role: Accessible.ToolBar; Accessible.name: "Screenshot, location and information tools"
+        Row {
+            id: toolbarActions; x: 4; y: 2; spacing: 2
+            ToolbarAction {
+                id: screenshotButton; objectName: "screenshotButton"; icon: "camera"; enabled: !window.exporting
+                description: window.exporting ? "Saving image…" : "Save image — export PNG or JPEG (Ctrl+S)"
+                onTriggered: window.openExport()
+            }
+            ToolbarAction {
+                objectName: "homeCityButton"; icon: "pin"
+                description: "Choose Reset location (home city)" + (window.homeCity.name ? ": " + window.homeCity.name : "")
+                onTriggered: { cityDialog.visible = true; citySearch.forceActiveFocus() }
+            }
+            ToolbarAction {
+                objectName: "locationInfoButton"; icon: "info"; highlighted: window.locationPanelOpen
+                description: "My Location info — show rise and set times for the selected map location"
+                onTriggered: window.locationPanelOpen = !window.locationPanelOpen
+            }
         }
     }
     Rectangle {
@@ -486,8 +533,8 @@ Window {
             anchors.centerIn: parent; width: Math.min(440, window.width - 32); height: Math.min(440, window.height - 32)
             radius: 10; color: "#142330"; border.color: "#496779"
             MouseArea { anchors.fill: parent }
-            Text { x: 18; y: 16; text: "Home city"; color: "#d5e3ee"; font.pixelSize: 18 }
-            Text { x: 18; y: 44; text: "Center here on opening and Reset"; color: "#99bdce"; font.pixelSize: 12 }
+            Text { x: 18; y: 16; text: "Reset location"; color: "#d5e3ee"; font.pixelSize: 18 }
+            Text { x: 18; y: 44; text: "Home city · center here on opening and Reset"; color: "#99bdce"; font.pixelSize: 12 }
             Rectangle {
                 x: 18; y: 72; width: parent.width - 36; height: 36; radius: 5; color: "#080f18"; border.color: "#496779"
                 TextInput {
@@ -523,16 +570,6 @@ Window {
         font.family: "Segoe UI"; font.pixelSize: 11; color: "#8197aa"
     }
     // Location details stay independent of layer visibility and camera mode.
-    Rectangle {
-        x: 132; y: 10; width: 126; height: 28; radius: 6; z: 20
-        color: "#dd101d29"; border.color: "#496779"
-        TimeAction {
-            anchors.fill: parent; objectName: "locationInfoButton"
-            label: "My Location info"
-            description: "Show rise and set times for the location selected on the map"
-            onTriggered: window.locationPanelOpen = !window.locationPanelOpen
-        }
-    }
     Rectangle {
         id: locationPanel; objectName: "locationInfoPanel"
         visible: window.locationPanelOpen
@@ -632,6 +669,11 @@ Window {
         anchors.fill: parent; z: 110; visible: false; color: "#c0080f18"
         property bool utc: false
         property string error: ""
+        function showCalendar() {
+            const fields = sky.datePickerFields(dateField.text, utc)
+            calendarPopup.year = fields.year; calendarPopup.month = fields.month
+            calendarPopup.open()
+        }
         function apply() {
             error = sky.selectDateTime(dateField.text, timeField.text, utc)
             if (!error) window.closeDateTime()
@@ -650,12 +692,20 @@ Window {
                 TextInput {
                     id: dateField; objectName: "dateInput"; anchors.fill: parent; anchors.margins: 8
                     font.pixelSize: 16; color: "#e1edf5"; selectByMouse: true; activeFocusOnTab: true; clip: true
+                    anchors.rightMargin: 44
                     maximumLength: 10; Accessible.name: "Date, YYYY-MM-DD"
-                    KeyNavigation.tab: timeField; KeyNavigation.backtab: dateCancel
+                    KeyNavigation.tab: dateCalendarButton; KeyNavigation.backtab: dateCancel
                     onTextEdited: timeDialog.error = ""
                     Keys.onEscapePressed: window.closeDateTime()
                     onAccepted: timeDialog.apply()
                 }
+            }
+            ToolbarAction {
+                id: dateCalendarButton; objectName: "dateCalendarButton"
+                x: 194; y: 110; width: 32; height: 34; icon: "calendar"
+                description: "Choose a date from the calendar"
+                KeyNavigation.tab: timeField; KeyNavigation.backtab: dateField
+                onTriggered: timeDialog.showCalendar()
             }
             Rectangle {
                 x: 248; y: 108; width: parent.width - 268; height: 38; radius: 5; color: "#080f18"; border.color: timeField.activeFocus ? "#b1d5ed" : "#496779"
@@ -663,7 +713,7 @@ Window {
                     id: timeField; objectName: "timeInput"; anchors.fill: parent; anchors.margins: 8
                     font.pixelSize: 16; color: "#e1edf5"; selectByMouse: true; activeFocusOnTab: true; clip: true
                     maximumLength: 8; Accessible.name: "Time, HH:MM:SS"
-                    KeyNavigation.tab: localTimeChoice; KeyNavigation.backtab: dateField
+                    KeyNavigation.tab: localTimeChoice; KeyNavigation.backtab: dateCalendarButton
                     onTextEdited: timeDialog.error = ""
                     Keys.onEscapePressed: window.closeDateTime()
                     onAccepted: timeDialog.apply()
@@ -698,17 +748,83 @@ Window {
                 onTriggered: window.closeDateTime()
             }
         }
-        Shortcut { sequence: "Escape"; enabled: timeDialog.visible; onActivated: window.closeDateTime() }
+        Shortcut { sequence: "Escape"; enabled: timeDialog.visible && !calendarPopup.visible; onActivated: window.closeDateTime() }
     }
-    Rectangle {
-        x: 268; y: 10; width: 108; height: 28; radius: 6; z: 20
-        color: "#dd101d29"; border.color: "#496779"
-        TimeAction {
-            id: screenshotButton; objectName: "screenshotButton"; anchors.fill: parent
-            enabled: !window.exporting
-            label: window.exporting ? "Saving…" : "Save image…"
-            description: "Export the current map or globe as PNG or JPEG (Ctrl+S)"
-            onTriggered: window.openExport()
+    Controls.Popup {
+        id: calendarPopup; objectName: "dateCalendarPopup"
+        parent: window.contentItem
+        x: (window.width - width) / 2; y: (window.height - height) / 2
+        width: 360; height: 370; padding: 0; modal: true; focus: true; z: 120
+        closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutside
+        property int year: 2026
+        property int month: 0
+        function shiftMonth(delta) {
+            const total = year * 12 + month + delta
+            const nextYear = Math.floor(total / 12)
+            if (nextYear < 1 || nextYear > 9999) return
+            year = nextYear; month = total % 12
+        }
+        function choose(iso) { dateField.text = iso; timeDialog.error = ""; close() }
+        onOpened: calendarMonth.forceActiveFocus()
+        onClosed: if (timeDialog.visible) dateCalendarButton.forceActiveFocus()
+        background: Rectangle { radius: 8; color: "#142330"; border.color: "#59788d" }
+        contentItem: Item {
+            TimeAction {
+                objectName: "calendarPreviousMonth"; x: 10; y: 14; width: 30; height: 32; direction: -1
+                description: "Previous month"; enabled: calendarPopup.year > 1 || calendarPopup.month > 0
+                onTriggered: calendarPopup.shiftMonth(-1)
+            }
+            Controls.ComboBox {
+                id: calendarMonth; objectName: "calendarMonthChoice"; x: 46; y: 12; width: 148; height: 36
+                model: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+                currentIndex: calendarPopup.month
+                onActivated: calendarPopup.month = currentIndex
+                font.pixelSize: 13; Accessible.name: "Calendar month"
+                palette.dark: "#a9c3d5"; palette.button: "#203747"; palette.buttonText: "#e1edf5"; palette.text: "#e1edf5"; palette.window: "#142330"; palette.base: "#142330"; palette.highlight: "#31546b"; palette.highlightedText: "#e1edf5"
+                background: Rectangle { radius: 4; color: "#203747"; border.color: calendarMonth.activeFocus ? "#b1d5ed" : "#496779" }
+            }
+            Controls.SpinBox {
+                id: calendarYear; objectName: "calendarYearChoice"; x: 202; y: 12; width: 112; height: 36
+                from: 1; to: 9999; editable: true; value: calendarPopup.year
+                onValueModified: calendarPopup.year = value
+                textFromValue: function(value, locale) { return value.toString() }
+                valueFromText: function(text, locale) { return Number(text) }
+                font.pixelSize: 13; Accessible.name: "Calendar year"
+                palette.button: "#203747"; palette.buttonText: "#e1edf5"; palette.text: "#e1edf5"; palette.base: "#142330"; palette.mid: "#496779"
+                background: Rectangle { radius: 4; color: "#203747"; border.color: calendarYear.activeFocus ? "#b1d5ed" : "#496779" }
+            }
+            TimeAction {
+                objectName: "calendarNextMonth"; x: 320; y: 14; width: 30; height: 32; direction: 1
+                description: "Next month"; enabled: calendarPopup.year < 9999 || calendarPopup.month < 11
+                onTriggered: calendarPopup.shiftMonth(1)
+            }
+            Controls.DayOfWeekRow {
+                x: 16; y: 60; width: 328; height: 28; spacing: 3; locale: calendarDays.locale
+                delegate: Text {
+                    required property string shortName
+                    text: shortName; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 12; color: "#a9c3d5"
+                }
+            }
+            Controls.MonthGrid {
+                id: calendarDays; objectName: "calendarDays"
+                x: 16; y: 92; width: 328; height: 216; spacing: 3
+                year: calendarPopup.year; month: calendarPopup.month
+                delegate: TimeAction {
+                    required property var model
+                    readonly property string isoDate: String(model.year).padStart(4, "0") + "-" + String(model.month + 1).padStart(2, "0") + "-" + String(model.day).padStart(2, "0")
+                    objectName: "calendarDay" + isoDate
+                    width: (calendarDays.width - 18) / 7; height: (calendarDays.height - 15) / 6
+                    enabled: model.year >= 1 && model.year <= 9999
+                    opacity: model.month === calendarPopup.month ? 1 : .45
+                    label: String(model.day); description: "Choose " + isoDate
+                    highlighted: isoDate === dateField.text
+                    Rectangle { anchors.fill: parent; anchors.margins: 1; radius: 4; z: -1; color: parent.highlighted ? "#31546b" : "transparent" }
+                    onTriggered: calendarPopup.choose(isoDate)
+                }
+            }
+            Text { x: 16; y: 334; text: "Select a day to fill the date"; color: "#a9c3d5"; font.pixelSize: 12 }
+            TimeAction { x: 274; y: 324; width: 70; height: 32; label: "Close"; description: "Close calendar without selecting a day"; onTriggered: calendarPopup.close() }
         }
     }
     Shortcut {
@@ -860,7 +976,7 @@ Window {
         Accessible.onPressAction: triggered()
         Keys.onSpacePressed: event => { triggered(); event.accepted = true }
         Keys.onReturnPressed: event => { triggered(); event.accepted = true }
-        Keys.onEscapePressed: event => { if (exportDialog.visible) window.closeExport(); else if (timeDialog.visible) window.closeDateTime(); else if (intervalMenu.visible) intervalMenu.visible = false; else sky.stopAnimation(); event.accepted = true }
+        Keys.onEscapePressed: event => { if (calendarPopup.visible) calendarPopup.close(); else if (exportDialog.visible) window.closeExport(); else if (timeDialog.visible) window.closeDateTime(); else if (intervalMenu.visible) intervalMenu.visible = false; else sky.stopAnimation(); event.accepted = true }
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
@@ -1097,7 +1213,7 @@ Window {
             anchors.left: parent.left
             anchors.leftMargin: footer.sideMargin
             y: footer.verticalPadding
-            height: 65
+            height: 84
             spacing: 18
             Item {
                 width: 272; height: 65
@@ -1185,16 +1301,27 @@ Window {
                     onTriggered: { mapViewport.fitMap(); globe.fitView() }
                 }
             }
-            Rectangle {
-                y: 32; width: 74; height: 32; radius: 6
-                color: "#121f2b"; border.color: sky.live ? "#506d80" : "#2a3d4c"
-                TimeAction {
-                    objectName: "resetButton"
-                    anchors.fill: parent
-                    label: "\u21bb  Reset"
-                    description: "Reset to the current time and home city, and stop playback"
-                    highlighted: sky.live
-                    onTriggered: { sky.goToNow(); window.centerHome(); intervalMenu.visible = false }
+            Item {
+                width: Math.max(96, Math.min(180, resetDestinationMetrics.width + 8)); height: 84
+                TextMetrics { id: resetDestinationMetrics; text: resetDestinationLabel.text; font.family: "Segoe UI"; font.pixelSize: 10 }
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 32; width: 74; height: 32; radius: 6
+                    color: "#121f2b"; border.color: sky.live ? "#506d80" : "#2a3d4c"
+                    TimeAction {
+                        objectName: "resetButton"; anchors.fill: parent; label: "\u21bb  Reset"
+                        description: "Return to live time and " + (window.homeCity.name ? window.homeCity.name : "the full view") + "; stop playback"
+                        highlighted: sky.live
+                        onTriggered: { sky.goToNow(); window.centerHome(); intervalMenu.visible = false }
+                    }
+                }
+                Text {
+                    id: resetDestinationLabel; objectName: "resetDestinationLabel"
+                    x: 0; y: 68; width: parent.width
+                    text: window.homeCity.name || "Full view"
+                    horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+                    font.family: "Segoe UI"; font.pixelSize: 10; color: "#8197aa"
+                    Accessible.name: "Reset destination: " + text
                 }
             }
         }

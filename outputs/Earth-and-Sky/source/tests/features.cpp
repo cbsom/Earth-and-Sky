@@ -37,7 +37,15 @@ int main(int argc,char** argv) {
     auto window=qobject_cast<QQuickWindow*>(engine.rootObjects().first());
     auto check=[](bool condition,const char* label){if(!condition)qFatal("FAIL: %s",label);};
     auto eval=[&](const QString& code){QQmlExpression e(qmlContext(window),window,code);auto r=e.evaluate();check(!e.hasError(),qPrintable(e.error().toString()));return r;};
-    auto find=[&](const char* name){auto item=window->findChild<QQuickItem*>(name);check(item,name);return item;};
+    auto find=[&](const char* name){
+        auto item=window->findChild<QQuickItem*>(name);
+        // Dynamically generated calendar delegates are owned by their model;
+        // find them through the visual tree, including the modal overlay.
+        if(!item){QList<QQuickItem*> todo{window->contentItem()};while(!todo.isEmpty()){
+            auto child=todo.takeFirst();if(child->objectName()==name){item=child;break;}todo.append(child->childItems());
+        }}
+        check(item,name);return item;
+    };
     auto click=[&](const char* name){auto item=find(name);QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,item->mapToScene(QPointF(item->width()/2,item->height()/2)).toPoint());QCoreApplication::processEvents();};
     auto settle=[&](){QTest::qWait(600);window->grabWindow();};
     auto snapshot=[&](const QString& name){
@@ -54,6 +62,28 @@ int main(int argc,char** argv) {
     find("dateInput")->setProperty("text","2026-03-20");click("utcTimeChoice");click("applyDateTimeButton");
     check(!find("dateTimeDialog")->isVisible() && sky.displayedUtc()==QDateTime(QDate(2026,3,20),QTime(12,0),QTimeZone::utc()),"apply UTC date through UI");
     check(find("timeStatusLabel")->property("text")=="SELECTED","selected-time status");
+    // Calendar selection changes the draft date only, preserving time and zone.
+    click("dateTimeButton");click("utcTimeChoice");
+    const auto calendarTime=find("timeInput")->property("text").toString();
+    const auto beforeCalendar=sky.displayedUtc();
+    click("dateCalendarButton");check(eval("calendarPopup.visible").toBool(),"calendar opens");
+    eval("calendarPopup.year = 2025; calendarPopup.month = 11");
+    click("calendarNextMonth");check(eval("calendarPopup.year === 2026 && calendarPopup.month === 0").toBool(),"calendar crosses year forward");
+    click("calendarPreviousMonth");check(eval("calendarPopup.year === 2025 && calendarPopup.month === 11").toBool(),"calendar crosses year backward");
+    eval("calendarPopup.year = 1; calendarPopup.month = 0");check(!find("calendarPreviousMonth")->isEnabled(),"calendar lower boundary");
+    eval("calendarPopup.year = 9999; calendarPopup.month = 11");check(!find("calendarNextMonth")->isEnabled(),"calendar upper boundary");
+    eval("calendarPopup.year = 2024; calendarPopup.month = 1");settle();snapshot("date-calendar");
+    click("calendarDay2024-02-29");
+    check(!eval("calendarPopup.visible").toBool() && find("dateInput")->property("text")=="2024-02-29","leap day picked into date field");
+    check(find("timeInput")->property("text").toString()==calendarTime && eval("timeDialog.utc").toBool() && sky.displayedUtc()==beforeCalendar,"calendar preserves time, zone and un-applied simulation");
+    click("applyDateTimeButton");check(sky.displayedUtc().date()==QDate(2024,2,29) && sky.displayedUtc().time()==QTime::fromString(calendarTime,"HH:mm:ss"),"calendar date applies to simulation");
+    click("dateTimeButton");click("dateCalendarButton");window->resize(720,472);settle();snapshot("date-calendar-small");
+    check(eval("calendarPopup.y >= 0 && calendarPopup.y + calendarPopup.height <= window.height").toBool(),"calendar fits minimum window");
+    QTest::keyClick(window,Qt::Key_Escape);QCoreApplication::processEvents();
+    check(!eval("calendarPopup.visible").toBool() && find("dateTimeDialog")->isVisible(),"Escape closes calendar only");
+    QTest::keyClick(window,Qt::Key_Escape);QCoreApplication::processEvents();
+    window->resize(1280,752);sky.selectDateTime("2026-03-20","12:00:00",true);
+
     eval("planetsToggle.checked = true; allConstellationsToggle.checked = true; mapViewport.setObserver(35.22,31.78); globe.centerOn(35.22,31.78)");settle();
     check(find("locationInfoPanel")->isVisible(),"location selection opens panel");
     auto info=find("locationInfoPanel")->property("info").toMap();
@@ -67,7 +97,8 @@ int main(int argc,char** argv) {
     snapshot("date-time-dialog");
     QTest::keyClick(window,Qt::Key_Escape);QCoreApplication::processEvents();check(!find("dateTimeDialog")->isVisible(),"Escape closes dialog");
     click("dateTimeButton");find("dateInput")->forceActiveFocus();
-    QTest::keyClick(window,Qt::Key_Tab);check(find("timeInput")->hasActiveFocus(),"date input tab order");
+    QTest::keyClick(window,Qt::Key_Tab);check(find("dateCalendarButton")->hasActiveFocus(),"date input tabs to calendar button");
+    QTest::keyClick(window,Qt::Key_Tab);check(find("timeInput")->hasActiveFocus(),"calendar button tabs to time input");
     QTest::keyClick(window,Qt::Key_Escape);QCoreApplication::processEvents();
     click("locationInfoButton");check(!find("locationInfoPanel")->isVisible(),"panel can close without clearing location");
     click("locationInfoButton");
@@ -146,6 +177,27 @@ int main(int argc,char** argv) {
     QFile existing(invalid);check(existing.open(QIODevice::WriteOnly),"create preservation fixture");existing.write("original");existing.close();
     check(!writeScreenshot(QImage(10,10,QImage::Format_RGB32),QUrl::fromLocalFile(invalid)).isEmpty(),"reject unsupported extension before opening output");
     check(existing.open(QIODevice::ReadOnly) && existing.readAll()=="original","failed export preserves existing file");
+    check(find("resetDestinationLabel")->property("text")=="Full view","reset label identifies full view when no home city is set");
+    for(const auto* name:{"flatMapViewButton","globeViewButton","homeCityButton","locationInfoButton","screenshotButton"}) {
+        auto button=find(name);check(button->property("label").toString().isEmpty() && !button->property("description").toString().isEmpty(),"toolbar uses icons with accessible descriptions");
+    }
+    check(eval("topToolbar.width < 200 && topToolbar.x + topToolbar.width === window.width - 8").toBool(),"action toolbar grouped at top right");
+    check(find("globeViewButton")->mapToScene(QPointF()).x() < find("flatMapViewButton")->mapToScene(QPointF()).x() && eval("viewToolbar.x === 8").toBool(),"Globe then Flat map at top left");
+    check(find("screenshotButton")->mapToScene(QPointF()).x() < find("homeCityButton")->mapToScene(QPointF()).x() && find("homeCityButton")->mapToScene(QPointF()).x() < find("locationInfoButton")->mapToScene(QPointF()).x(),"Screenshot, Location, Information order");
+    check(find("locationInfoButton")->property("icon")=="info","information uses i icon");
+    click("homeCityButton");check(find("homeCityDialog")->isVisible(),"location pin opens reset-location picker");
+    QTest::keyClick(window,Qt::Key_Escape);QCoreApplication::processEvents();
+    eval("window.homeCity = ({name: 'Jerusalem, Israel', latitude: 31.78, longitude: 35.22})");
+    check(find("resetDestinationLabel")->property("text")=="Jerusalem, Israel","chosen reset destination shown beneath Reset");
+    eval("mapViewport.setObserver(-74,40.71)");
+    check(find("resetDestinationLabel")->property("text")=="Jerusalem, Israel","temporary My Location does not change reset destination");
+    click("resetButton");settle();
+    check(eval("Math.abs(mapViewport.followLongitude - (35.22 + 180) / 360) < 0.00001 && !mapViewport.horizonActive").toBool(),"Reset goes to the labeled home city");
+    eval("mapViewport.setObserver(35.22,31.78); globe.centerOn(35.22,31.78)");settle();snapshot("icon-toolbar-wide");
+    eval("window.homeCity = ({name: 'A very long selected city name, Country name', latitude: 31.78, longitude: 35.22})");
+    window->resize(720,472);settle();
+    check(eval("timeControls.x + timeControls.width <= window.width && topToolbar.x >= 0 && topToolbar.x + topToolbar.width <= window.width && resetDestinationLabel.y >= 64").toBool(),"toolbar and long reset label fit minimum window");
+    snapshot("icon-toolbar-small");
     check(warnings==0,"no QML binding or runtime warnings");
     qInfo()<<"PASS: date entry, location panel, playback, responsive layouts, sharp zoom, PNG/JPEG export, compact credits, confirmation dismissal, file picker and error recovery";
     return 0;

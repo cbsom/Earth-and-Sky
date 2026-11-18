@@ -78,7 +78,7 @@ void GlobeView::paintSky(QPainter* p,bool front) {
                 // About 20 screen pixels per chord: smooth arcs without oversampling.
                 const int segments=std::clamp(int(std::ceil(angle*shell*radius()/20)),1,96);
                 auto prev=start;
-                for(int step=1;step<=segments;++step){double t=double(step)/segments;V next{start.x*(1-t)+end.x*t,start.y*(1-t)+end.y*t,start.z*(1-t)+end.z*t};double norm=std::sqrt(next.x*next.x+next.y*next.y+next.z*next.z);next.x/=norm;next.y/=norm;next.z/=norm;worldLine(prev,next,QColor(163,169,177,100));prev=next;}
+                for(int step=1;step<=segments;++step){double t=double(step)/segments;V next{start.x*(1-t)+end.x*t,start.y*(1-t)+end.y*t,start.z*(1-t)+end.z*t};double norm=std::sqrt(next.x*next.x+next.y*next.y+next.z*next.z);next.x/=norm;next.y/=norm;next.z/=norm;worldLine(prev,next,QColor(163,169,177,qRound(100*constellationLineOpacity)));prev=next;}
             }
             V mean{0,0,0};
             for(size_t j=0;j<points.size();++j) {
@@ -91,7 +91,7 @@ void GlobeView::paintSky(QPainter* p,bool front) {
             const bool labelVisible=!mHorizon || mean.x*observerView.x+mean.y*observerView.y+mean.z*observerView.z>=0;
             if(layer("labels") && labelVisible && (mean.z>=0)==front) {
                 double count=points.size();mean.x/=count;mean.y/=count;mean.z/=count;
-                auto pos=pixel(mean);p->setOpacity(front?1.0:.22);p->setPen(QColor(153,153,153));
+                auto pos=pixel(mean);p->setOpacity((front?1.0:.22)*constellationLabelOpacity);p->setPen(QColor(153,153,153));
                 QRectF text(pos.x()-60,pos.y()+5,120,18);p->drawText(text,Qt::AlignHCenter|Qt::AlignTop,f.name);p->setOpacity(1);
             }
         }

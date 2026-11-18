@@ -2,15 +2,15 @@
 
 An offline desktop app for exploring Earth and the sky, with flat-map and globe views, daylight and twilight, the Sun, Moon, planets, and all 88 constellations.
 
-**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
+**[Download for Windows or Linux](https://github.com/cbsom/Earth-and-Sky/releases/tag/v1.0.0)** · [Installation and controls](https://github.com/cbsom/Earth-and-Sky#download-and-install) · [Report a problem](https://github.com/cbsom/Earth-and-Sky/issues)
 
 Earth & Sky displays a high-resolution world map in a single window. The daylight side stays bright, the night side is shaded, and a smooth transition shows twilight. A subtle line marks the approximate sunrise/sunset boundary. Sun, Moon, and planet markers show the points on Earth directly beneath them. The Moon uses a real photograph shaded to its phase at the displayed time. All 88 constellations are available as individually positioned principal stars joined in conventional patterns, with a separate zodiac-only switch and a faint ecliptic tracing the Solar System’s reference plane.
 
-Screenshots below show the **1.0.0 release candidate**, including the location panel. Published downloads still point to v0.1.1 until 1.0 is released.
+Screenshots below show the **1.0.0 interface**, including the location panel. The post-release icon-toolbar update in the current source is described under [Controls](#controls-and-saved-preferences).
 
-![Earth & Sky 1.0 candidate — flat map and location information](outputs/Earth-and-Sky/screenshots/flat-map-1.0.png)
+![Earth & Sky 1.0 — flat map and location information](outputs/Earth-and-Sky/screenshots/flat-map-1.0.png)
 
-![Earth & Sky 1.0 candidate — globe and location information](outputs/Earth-and-Sky/screenshots/globe-1.0.png)
+![Earth & Sky 1.0 — globe and location information](outputs/Earth-and-Sky/screenshots/globe-1.0.png)
 
 The application is built with **C++17 and Qt Quick/QML**. It runs locally, works offline, and updates every 30 seconds in live mode using the computer's current time. Time navigation can hold the entire sky at a selected instant. There are no accounts, API keys, map servers, or runtime downloads.
 
@@ -35,9 +35,9 @@ The application is built with **C++17 and Qt Quick/QML**. It runs locally, works
 - Subtle labeled equator, tropics, and polar circles with their own visibility switch.
 - A half-day, half-night Earth icon for the executable and application window.
 
-## Version 1.0 release candidate
+## Version 1.0
 
-Version **1.0.0** is in release preparation. It includes the additions below. The latest published installers remain **v0.1.1**; the download links continue to point to that release until 1.0 is published. Build the current source or use the locally prepared candidate to try 1.0.
+Version **1.0.0** is [published](https://github.com/cbsom/Earth-and-Sky/releases/tag/v1.0.0) for Windows and Linux. It includes the additions below. The current working source additionally contains the post-release icon-toolbar and constellation-opacity updates described under Controls.
 
 - [Direct date/time selection](#direct-date-and-time-selection), a separate **Now** button, and **LIVE / SELECTED / PLAYING** status.
 - [My Location information](#my-location-information): Sun, Moon and five-planet rise/set times, horizon status, daylight duration and twilight.
@@ -46,19 +46,19 @@ Version **1.0.0** is in release preparation. It includes the additions below. Th
 
 ## Download and install
 
-Download **Earth & Sky v0.1.1** from the [GitHub release](https://github.com/cbsom/Earth-and-Sky/releases/tag/v0.1.1). Choose one package for your operating system:
+Download **Earth & Sky v1.0.0** from the [GitHub release](https://github.com/cbsom/Earth-and-Sky/releases/tag/v1.0.0). Choose one package for your operating system:
 
 | Operating system | Download | Installation |
 | --- | --- | --- |
-| Windows 10/11, x64 | [Windows setup](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Windows-x64-Setup.exe) | Run the installer; creates a Start menu entry. |
-| Linux Mint 22 / Ubuntu 24.04, x86_64 | [Debian package (.deb)](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Linux-amd64.deb) | Installs through the package manager and adds an application menu entry. |
-| Linux x86_64, portable | [AppImage](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Linux-x86_64.AppImage) | Make executable and run; no system-wide installation. |
+| Windows 10/11, x64 | [Windows setup](https://github.com/cbsom/Earth-and-Sky/releases/download/v1.0.0/Earth-and-Sky-1.0.0-Windows-x64-Setup.exe) | Run the installer; creates a Start menu entry. |
+| Linux Mint 22 / Ubuntu 24.04, x86_64 | [Debian package (.deb)](https://github.com/cbsom/Earth-and-Sky/releases/download/v1.0.0/Earth-and-Sky-1.0.0-Linux-amd64.deb) | Installs through the package manager and adds an application menu entry. |
+| Linux x86_64, portable | [AppImage](https://github.com/cbsom/Earth-and-Sky/releases/download/v1.0.0/Earth-and-Sky-1.0.0-Linux-x86_64.AppImage) | Make executable and run; no system-wide installation. |
 
 These packages include Qt. You do not need to install Qt, CMake, a compiler, or download the source code to use the application. Linux still needs compatible system and graphics libraries. The Linux packages were built on Mint 22.3 (Ubuntu 24.04 base); compatibility with older distributions and ARM64 has not been validated. No macOS installer is available for this release.
 
 ### Windows
 
-1. Download and run `Earth-and-Sky-0.1.1-Windows-x64-Setup.exe`.
+1. Download and run `Earth-and-Sky-1.0.0-Windows-x64-Setup.exe`.
 2. Follow the setup wizard. Installation is for your current Windows account and does not require administrator privileges.
 3. Optionally select a desktop shortcut, then launch **Earth & Sky** from the Start menu or at the end of setup.
 
@@ -66,10 +66,10 @@ To update, close the application and run the newer installer. To uninstall, use 
 
 ### Linux Mint / Ubuntu: install the .deb
 
-Download `Earth-and-Sky-0.1.1-Linux-amd64.deb`. Open a terminal in the folder containing the download and run:
+Download `Earth-and-Sky-1.0.0-Linux-amd64.deb`. Open a terminal in the folder containing the download and run:
 
 ```bash
-sudo apt install ./Earth-and-Sky-0.1.1-Linux-amd64.deb
+sudo apt install ./Earth-and-Sky-1.0.0-Linux-amd64.deb
 ```
 
 Launch **Earth & Sky** from the application menu, or run:
@@ -88,17 +88,17 @@ Saved preferences are retained. This package targets Mint 22 / Ubuntu 24.04 x86_
 
 ### Linux: run the portable AppImage
 
-Download `Earth-and-Sky-0.1.1-Linux-x86_64.AppImage`. In the folder containing the download, run:
+Download `Earth-and-Sky-1.0.0-Linux-x86_64.AppImage`. In the folder containing the download, run:
 
 ```bash
-chmod +x Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
-./Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
+chmod +x Earth-and-Sky-1.0.0-Linux-x86_64.AppImage
+./Earth-and-Sky-1.0.0-Linux-x86_64.AppImage
 ```
 
 If FUSE is unavailable, use extraction mode instead:
 
 ```bash
-APPIMAGE_EXTRACT_AND_RUN=1 ./Earth-and-Sky-0.1.1-Linux-x86_64.AppImage
+APPIMAGE_EXTRACT_AND_RUN=1 ./Earth-and-Sky-1.0.0-Linux-x86_64.AppImage
 ```
 
 The AppImage does not automatically create an application menu entry. Keep it in a permanent folder if you create a launcher for it. To update, close the application and replace the AppImage with the newer download. To remove it, delete the AppImage and any launcher you created; saved preferences are retained.
@@ -108,12 +108,12 @@ The AppImage does not automatically create an application menu entry. Keep it in
 Download the matching `.sha256` file from the release into the same folder as the package, then run the appropriate command:
 
 ```bash
-sha256sum -c Earth-and-Sky-0.1.1-Linux-amd64.deb.sha256
+sha256sum -c Earth-and-Sky-1.0.0-Linux-amd64.deb.sha256
 # Or, for the AppImage:
-sha256sum -c Earth-and-Sky-0.1.1-Linux-x86_64.AppImage.sha256
+sha256sum -c Earth-and-Sky-1.0.0-Linux-x86_64.AppImage.sha256
 ```
 
-A matching download prints `OK`. Choose the installer or AppImage linked above for normal use. Developers can download the [v0.1.1 source snapshot](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Source.zip) and its matching `.sha256` file from the release. The snapshot contains application source and a per-file hash manifest; it does not include Qt source or the SDK.
+A matching download prints `OK`. Choose the installer or AppImage linked above for normal use. Developers can download the [v1.0.0 source snapshot](https://github.com/cbsom/Earth-and-Sky/releases/download/v1.0.0/Earth-and-Sky-1.0.0-Source.zip) and its matching `.sha256` file from the release. The snapshot contains application source and a per-file hash manifest; it does not include Qt source or the SDK.
 
 ## Build on Windows
 
@@ -194,7 +194,7 @@ In that case, use `build-nmake\Earth-and-Sky.exe` in the copy command above. Do 
 - **A DLL or QML module is missing when launching:** run `windeployqt` and launch the executable from the resulting `app` folder. Keep that folder's contents together.
 - **Changes do not appear:** rebuild, copy the new executable into the application folder, and reopen that copy. QML and image assets are embedded in the executable.
 
-Released builds have been built on Windows and Linux. The Linux validation report covers an earlier v0.1.0 build: its AppImage and extracted Debian package passed self-tests and headless flat-map/globe rendering checks using Qt 6.8.3 and GCC on Mint 22.3. The 1.0 candidate has been built and tested on Windows; it has not yet been validated on Linux. Interactive installation, clean-machine compatibility, and macOS builds have not been validated; see [Linux packaging validation](installer/linux/VALIDATION.md).
+Released builds have been built on Windows and Linux. The Linux validation report covers an earlier v0.1.0 build: its AppImage and extracted Debian package passed self-tests and headless flat-map/globe rendering checks using Qt 6.8.3 and GCC on Mint 22.3. The post-release UI changes in the current working source have been built and tested on Windows; these new changes have not been validated on Linux. Interactive installation, clean-machine compatibility, and macOS builds have not been validated; see [Linux packaging validation](installer/linux/VALIDATION.md).
 
 ## Build on Linux
 
@@ -275,6 +275,9 @@ Generated builds, packaged binaries, and downloaded SDKs do not need to be commi
 
 ## Controls and saved preferences
 
+Post-1.0 UI update in the current working source: the top controls are split into two compact icon groups: **Globe**, then **Flat map** at the top left; **Save image** (camera), **Reset location** (pin), then **My Location info** (circled i) at the top right. Hover for tooltips or use Tab to focus a control and Space/Enter to activate it. The saved home city appears beneath **Reset**, showing where it will go; **Full view** means no home city is saved. Constellation names keep the 50% opacity setting, while connecting lines use 70% (30% transparency); body labels retain their brightness.
+
+
 The Sun layer is always enabled, including when an older saved preference hid it. The Labels switch still controls its name. On the first launch, Moon and Labels are on; Planets, Zodiac, All constellations, and Latitude lines are off. Saved choices for these six switches take precedence on later launches. The footer switches control:
 
 | Switch | Shows or hides |
@@ -294,7 +297,7 @@ The footer stays anchored to the bottom in normal, maximized, and full-screen wi
 
 ### Home city
 
-Choose **Home city…** at the upper right, then search by city or country and select a result. The city and coordinates are saved with your preferences, and the button displays the selected city name. The city list loads only when you open the picker and is cached for later searches. Opening the app and pressing **Reset** center this city without enabling My Horizon; Reset also returns to current time and stops playback. **Clear home** removes this preference. **Full map / Full globe** still fits the entire view independently.
+Choose the **Reset location** pin in the top-right toolbar, then search by city or country and select a result. The city and coordinates are saved with your preferences, and the label beneath **Reset** displays the selected city name. The city list loads only when you open the picker and is cached for later searches. Opening the app and pressing **Reset** center this city without enabling My Horizon; Reset also returns to current time and stops playback. **Clear home** removes this preference. **Full map / Full globe** still fits the entire view independently.
 
 City choices come from the bundled `outputs/Earth-and-Sky/source/assets/worldcities_list.csv`; no network connection is required. The outer celestial-sphere outline in Globe view is shown only when **All constellations** is enabled, and remains hidden in My Horizon.
 
@@ -322,13 +325,13 @@ Geographic latitude lines stay fixed on Earth while the celestial overlays move.
 
 ### Direct date and time selection
 
-In the 1.0 candidate, choose **Date / time…** or press **Ctrl+T**. Enter `YYYY-MM-DD` and `HH:MM:SS` using the 24-hour clock, then choose **Computer local time** or **UTC** and **Apply**. Invalid dates are rejected. Skipped or repeated local times at a daylight-saving transition are rejected too; choose UTC to identify the instant unambiguously.
+In version 1.0, choose **Date / time…** or press **Ctrl+T**. The current working source also has a calendar icon beside the date field: use the month/year selectors or previous/next arrows, then click a day. It fills the draft date without changing the time or local/UTC choice; **Apply** still confirms the change. Escape or clicking outside closes the calendar without selecting a different day. Enter `YYYY-MM-DD` and `HH:MM:SS` using the 24-hour clock, then choose **Computer local time** or **UTC** and **Apply**. Invalid dates are rejected. Skipped or repeated local times at a daylight-saving transition are rejected too; choose UTC to identify the instant unambiguously.
 
 Opening the editor pauses playback. Applying selects a fixed instant; Cancel keeps the displayed instant. **LIVE**, **SELECTED** and **PLAYING** identify the current state. **Now** returns to live time while preserving the selected location and camera. **Reset** additionally chooses Rotate Sky and restores the home-city view. Date entry, selected time and playback state are not saved between launches.
 
 ### My Location information
 
-In the 1.0 candidate, click the map or globe to select **My Location**, activate My Horizon, and open the information panel. **My Location info** closes or reopens the panel without changing the selection. If a home city is saved, **Use home city** selects it as the observer. **Full map / Full globe** clears the horizon selection; the panel then prompts for a location. The panel scrolls on smaller windows.
+In version 1.0, click the map or globe to select **My Location**, activate My Horizon, and open the information panel. **My Location info** closes or reopens the panel without changing the selection. If a home city is saved, **Use home city** selects it as the observer. **Full map / Full globe** clears the horizon selection; the panel then prompts for a location. The panel scrolls on smaller windows.
 
 The panel shows the first rise and first set on the displayed civil date for the Sun, Moon, Mercury, Venus, Mars, Jupiter and Saturn. It also shows current apparent center altitudes and above/below-horizon status, daylight duration, and civil, nautical and astronomical dawn/dusk. Status follows the displayed simulation time, including during playback, independently of map layer visibility.
 
@@ -338,7 +341,7 @@ Planet status distinguishes daylight, twilight and dark sky when above the horiz
 
 ### Screenshot export
 
-In the 1.0 candidate, choose **Save image…** at the top or press **Ctrl+S**:
+In version 1.0, choose the **Save image** camera icon in the top-right toolbar or press **Ctrl+S**:
 
 1. Choose **Choose file…**, then a filename and **PNG** or **JPEG** in the Save As dialog. PNG is lossless; `.jpg` and `.jpeg` produce JPEG. The filename extension determines the format.
 2. Save. A confirmation displays the destination and disappears on any click or after five seconds. Clicking also performs the usual action of the control underneath. Write or format errors return to the export dialog so you can retry.

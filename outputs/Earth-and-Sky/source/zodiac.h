@@ -109,6 +109,8 @@ Position interpolateSky(Position a,Position b,double fraction) {
     double z=(1-fraction)*std::sin(rad(a.lat))+fraction*std::sin(rad(b.lat));
     return {std::atan2(z,std::hypot(x,y))*180/pi,std::atan2(y,x)*180/pi};
 }
+constexpr double constellationLineOpacity = 0.7;
+constexpr double constellationLabelOpacity = 0.5;
 void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool showLabels=true,bool showAll=false) {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
@@ -121,7 +123,7 @@ void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool sho
     painter.setFont(font);
     for(size_t i=0;i<catalog.size();++i) {
         const auto& figure=catalog[i]; const auto& points=frame.figures[i];
-        painter.setPen(QPen(QColor(163,169,177,80),.65));
+        painter.setPen(QPen(QColor(163,169,177,qRound(80*constellationLineOpacity)),.65));
         for(auto [a,b] : figure.lines) {
             auto previous=points[a];
             const double cosine=std::sin(rad(points[a].lat))*std::sin(rad(points[b].lat))+std::cos(rad(points[a].lat))*std::cos(rad(points[b].lat))*std::cos(rad(points[b].lon-points[a].lon));
@@ -145,6 +147,7 @@ void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool sho
         double center=(std::atan2(sy,sx)*180/pi+180)/360*size.width();
         // A restrained dark outline preserves grey text over bright terrain.
         double advance=painter.fontMetrics().horizontalAdvance(figure.name);
+        painter.save();painter.setOpacity(painter.opacity()*constellationLabelOpacity);
         for(int copy=-1;copy<=1;++copy) {
             const double labelX=center+copy*size.width()-advance/2;
             QPainterPath label;
@@ -153,6 +156,7 @@ void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool sho
             painter.strokePath(label,QPen(QColor(8,15,24,200),2,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
             painter.fillPath(label,QColor(153,153,153));
         }
+        painter.restore();
     }
 }
 QImage zodiacImage(const ZodiacFrame& frame,QSize size,bool showLabels=true,bool showAll=false) {
