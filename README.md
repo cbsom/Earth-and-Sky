@@ -6,7 +6,7 @@ An offline desktop app for exploring Earth and the sky, with flat-map and globe 
 
 Earth & Sky displays a high-resolution world map in a single window. The daylight side stays bright, the night side is shaded, and a smooth transition shows twilight. A subtle line marks the approximate sunrise/sunset boundary. Sun, Moon, and planet markers show the points on Earth directly beneath them. The Moon uses a real photograph shaded to its phase at the displayed time. All 88 constellations are available as individually positioned principal stars joined in conventional patterns, with a separate zodiac-only switch and a faint ecliptic tracing the Solar System’s reference plane.
 
-Screenshots below show the **1.0.0 interface**, including the location panel. The post-release icon-toolbar update in the current source is described under [Controls](#controls-and-saved-preferences).
+![Earth & Sky — v0.1.1 flat-map view with zodiac constellations](outputs/Earth-and-Sky/screenshots/Earth-and-Sky-Screenshot-1.jpg)
 
 ![Earth & Sky 1.0 — flat map and location information](outputs/Earth-and-Sky/screenshots/flat-map-1.0.png)
 
@@ -34,15 +34,6 @@ The application is built with **C++17 and Qt Quick/QML**. It runs locally, works
 - **My Horizon:** select a location to highlight the sky above its geometric horizon and fade the rest of the map.
 - Subtle labeled equator, tropics, and polar circles with their own visibility switch.
 - A half-day, half-night Earth icon for the executable and application window.
-
-## Version 1.0
-
-Version **1.0.0** is [published](https://github.com/cbsom/Earth-and-Sky/releases/tag/v1.0.0) for Windows and Linux. It includes the additions below. The current working source additionally contains the post-release icon-toolbar and constellation-opacity updates described under Controls.
-
-- [Direct date/time selection](#direct-date-and-time-selection), a separate **Now** button, and **LIVE / SELECTED / PLAYING** status.
-- [My Location information](#my-location-information): Sun, Moon and five-planet rise/set times, horizon status, daylight duration and twilight.
-- [Screenshot export](#screenshot-export): clean PNG/JPEG images with only small, subdued image credits.
-- Sharper constellation rendering at maximum zoom, smaller neutral-gray (`#999999`) constellation names and subdued lines, and bright body labels with collision avoidance and no connector lines.
 
 ## Download and install
 
@@ -105,7 +96,7 @@ The AppImage does not automatically create an application menu entry. Keep it in
 
 ### Verify a Linux download (optional)
 
-Download the matching `.sha256` file from the release into the same folder as the package, then run the appropriate command:
+Download the matching checksum for the [.deb](https://github.com/cbsom/Earth-and-Sky/releases/download/v1.0.0/Earth-and-Sky-1.0.0-Linux-amd64.deb.sha256) or [AppImage](https://github.com/cbsom/Earth-and-Sky/releases/download/v1.0.0/Earth-and-Sky-1.0.0-Linux-x86_64.AppImage.sha256) into the same folder as the package, then run the appropriate command:
 
 ```bash
 sha256sum -c Earth-and-Sky-1.0.0-Linux-amd64.deb.sha256
@@ -113,7 +104,7 @@ sha256sum -c Earth-and-Sky-1.0.0-Linux-amd64.deb.sha256
 sha256sum -c Earth-and-Sky-1.0.0-Linux-x86_64.AppImage.sha256
 ```
 
-A matching download prints `OK`. Choose the installer or AppImage linked above for normal use. Developers can download the [v1.0.0 source snapshot](https://github.com/cbsom/Earth-and-Sky/releases/download/v1.0.0/Earth-and-Sky-1.0.0-Source.zip) and its matching `.sha256` file from the release. The snapshot contains application source and a per-file hash manifest; it does not include Qt source or the SDK.
+A matching download prints `OK`. Choose the installer or AppImage linked above for normal use. Developers can download the [v0.1.1 source snapshot](https://github.com/cbsom/Earth-and-Sky/releases/download/v0.1.1/Earth-and-Sky-0.1.1-Source.zip) and its matching `.sha256` file from the release. The snapshot contains application source and a per-file hash manifest; it does not include Qt source or the SDK.
 
 ## Build on Windows
 
@@ -194,7 +185,7 @@ In that case, use `build-nmake\Earth-and-Sky.exe` in the copy command above. Do 
 - **A DLL or QML module is missing when launching:** run `windeployqt` and launch the executable from the resulting `app` folder. Keep that folder's contents together.
 - **Changes do not appear:** rebuild, copy the new executable into the application folder, and reopen that copy. QML and image assets are embedded in the executable.
 
-Released builds have been built on Windows and Linux. The Linux validation report covers an earlier v0.1.0 build: its AppImage and extracted Debian package passed self-tests and headless flat-map/globe rendering checks using Qt 6.8.3 and GCC on Mint 22.3. The post-release UI changes in the current working source have been built and tested on Windows; these new changes have not been validated on Linux. Interactive installation, clean-machine compatibility, and macOS builds have not been validated; see [Linux packaging validation](installer/linux/VALIDATION.md).
+The current application has been built on Windows and Linux. The Linux AppImage and extracted Debian package passed built-in self-tests and headless rendering checks for both flat-map and globe views using Qt 6.8.3 and GCC on Mint 22.3. Interactive installation, clean-machine compatibility, and macOS builds have not been validated; see [Linux packaging validation](installer/linux/VALIDATION.md).
 
 ## Build on Linux
 
@@ -222,16 +213,6 @@ cmake --build build-linux -j "$(nproc)"
 ```
 
 QML, constellation data, and images are embedded, so source changes require a rebuild. No additional downloads are needed when running the application.
-
-## Packaging
-
-### Windows installer
-
-A per-user Windows installer can be built with Inno Setup 7. From the repository root, run `installer\build-installer.cmd` after building and deploying the app. The resulting setup executable is in `outputs/installers/`. It includes the required Qt runtime, Start menu shortcut, optional desktop shortcut, and uninstaller; users do not need Qt installed. Home-city and view preferences are retained across upgrades and uninstall. See the repository’s `installer/README.md` for build details.
-
-### Linux AppImage packaging
-
-The repository includes `installer/linux/build-appimage.sh` to build and bundle a Linux x86_64 AppImage using a Linux Qt 6.8+ kit. See `installer/linux/README.md` for prerequisites and WSL commands. AppImage and Debian packages are published for v0.1.1. The [Linux validation report](installer/linux/VALIDATION.md) records earlier v0.1.0 checks; validation of the v0.1.1 assets should be recorded separately.
 
 ## Project layout
 
@@ -295,12 +276,6 @@ The chosen switch states are saved immediately using Qt settings and restored on
 
 The footer stays anchored to the bottom in normal, maximized, and full-screen windows. The map fills the area above it. Controls share a compact row when space permits and stack on narrower windows.
 
-### Home city
-
-Choose the **Reset location** pin in the top-right toolbar, then search by city or country and select a result. The city and coordinates are saved with your preferences, and the label beneath **Reset** displays the selected city name. The city list loads only when you open the picker and is cached for later searches. Opening the app and pressing **Reset** center this city without enabling My Horizon; Reset also returns to current time and stops playback. **Clear home** removes this preference. **Full map / Full globe** still fits the entire view independently.
-
-City choices come from the bundled `outputs/Earth-and-Sky/source/assets/worldcities_list.csv`; no network connection is required. The outer celestial-sphere outline in Globe view is shown only when **All constellations** is enabled, and remains hidden in My Horizon.
-
 ### Time navigation
 
 Choose one of the two modes at the top of the navigation group:
@@ -322,35 +297,6 @@ Changing the interval during playback keeps time continuous and preserves the mo
 The date/time beneath the controls is local to the computer and includes the UTC offset for the selected date. Steps are elapsed UTC durations, so the local wall-clock hour can change across daylight-saving transitions. The application starts in live mode on each launch; the selected time and playback state are not saved. Controls and layer switches share one compact row when space permits, and stack on narrower windows.
 
 Geographic latitude lines stay fixed on Earth while the celestial overlays move. The slightly thicker equator and the other parallels use green, distinct from the lavender ecliptic. In the flat map, degree labels repeat at the left edge, center, and right edge (0, +/-23.44, and +/-66.56 degrees); the Labels switch also controls these labels. They have their own saved toggle and do not depend on constellation or label visibility.
-
-### Direct date and time selection
-
-In version 1.0, choose **Date / time…** or press **Ctrl+T**. The current working source also has a calendar icon beside the date field: use the month/year selectors or previous/next arrows, then click a day. It fills the draft date without changing the time or local/UTC choice; **Apply** still confirms the change. Escape or clicking outside closes the calendar without selecting a different day. Enter `YYYY-MM-DD` and `HH:MM:SS` using the 24-hour clock, then choose **Computer local time** or **UTC** and **Apply**. Invalid dates are rejected. Skipped or repeated local times at a daylight-saving transition are rejected too; choose UTC to identify the instant unambiguously.
-
-Opening the editor pauses playback. Applying selects a fixed instant; Cancel keeps the displayed instant. **LIVE**, **SELECTED** and **PLAYING** identify the current state. **Now** returns to live time while preserving the selected location and camera. **Reset** additionally chooses Rotate Sky and restores the home-city view. Date entry, selected time and playback state are not saved between launches.
-
-### My Location information
-
-In version 1.0, click the map or globe to select **My Location**, activate My Horizon, and open the information panel. **My Location info** closes or reopens the panel without changing the selection. If a home city is saved, **Use home city** selects it as the observer. **Full map / Full globe** clears the horizon selection; the panel then prompts for a location. The panel scrolls on smaller windows.
-
-The panel shows the first rise and first set on the displayed civil date for the Sun, Moon, Mercury, Venus, Mars, Jupiter and Saturn. It also shows current apparent center altitudes and above/below-horizon status, daylight duration, and civil, nautical and astronomical dawn/dusk. Status follows the displayed simulation time, including during playback, independently of map layer visibility.
-
-**All event times use the computer's time zone**, explicitly labeled, rather than the geographic location's time zone. Calculations handle 23/25-hour daylight-saving days, midnight daylight and polar day/night. **None** means no event on that date; **Unavailable** indicates a calculation failure.
-
-Planet status distinguishes daylight, twilight and dark sky when above the horizon. Position does not guarantee naked-eye visibility: glare near the Sun, weather and terrain matter. Rise/set calculations include standard refraction and Sun/Moon limb corrections at zero observer elevation. My Horizon remains a geometric boundary, so a body near that boundary can have a slightly different apparent-altitude status in the panel.
-
-### Screenshot export
-
-In version 1.0, choose the **Save image** camera icon in the top-right toolbar or press **Ctrl+S**:
-
-1. Choose **Choose file…**, then a filename and **PNG** or **JPEG** in the Save As dialog. PNG is lossless; `.jpg` and `.jpeg` produce JPEG. The filename extension determines the format.
-2. Save. A confirmation displays the destination and disappears on any click or after five seconds. Clicking also performs the usual action of the control underneath. Write or format errors return to the export dialog so you can retry.
-
-The export contains the current map or globe viewport at the current zoom and display resolution. It omits toolbars, dialogs, tooltips and the location-information panel. When that panel narrows the map, the exported view has the same narrower aspect ratio. Only image credits and the Moon-image license link appear beneath the image, in very small, faded lettering. No application title, timestamp, coordinates or legend is added.
-
-Opening export pauses the displayed time so the view stays fixed while choosing a destination. Canceling leaves that time selected; use **Now** to resume live time. Suggested filenames use the displayed UTC instant. PNG/JPEG output is written atomically to avoid truncating an existing file if saving fails. The Save As dialog confirms replacement of existing files.
-
-The developer `--capture PATH` option remains a separate full-window capture that saves and exits, including controls; see [Developer checks](#developer-checks).
 
 ### Zoom and pan
 
