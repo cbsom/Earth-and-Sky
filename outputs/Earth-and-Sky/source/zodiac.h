@@ -3,11 +3,31 @@
 
 #pragma once
 
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
+#include <QColor>
+#include <QFile>
 #include <QFont>
+#include <QImage>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPen>
+#include <QPointF>
+#include <QSize>
+#include <QSizeF>
+#include <QString>
+#include <QtMath>
+#include <algorithm>
+#include <cmath>
+#include <utility>
 #include <vector>
+#include "vendor/astronomy.h"
+
+inline constexpr double pi = 3.14159265358979323846;
+inline double rad(double d) { return d * pi / 180.0; }
+inline double wrap(double d) { return d - 360.0 * std::floor((d + 180.0) / 360.0); }
+struct Position { double lat, lon; };
 
 struct ZodiacStar { double ra, dec, magnitude; };
 struct ZodiacFigure {
@@ -15,7 +35,7 @@ struct ZodiacFigure {
     std::vector<ZodiacStar> stars;
     std::vector<std::pair<int,int>> lines;
 };
-std::vector<ZodiacFigure> loadConstellationCatalog(const QString& path,int expected) {
+inline std::vector<ZodiacFigure> loadConstellationCatalog(const QString& path,int expected) {
         QFile file(path);
         if(!file.open(QIODevice::ReadOnly)) qFatal("Constellation catalog is missing");
         QJsonParseError error;
@@ -43,7 +63,7 @@ std::vector<ZodiacFigure> loadConstellationCatalog(const QString& path,int expec
         if(int(result.size())!=expected) qFatal("Unexpected constellation count");
         return result;
 }
-const std::vector<ZodiacFigure>& zodiacCatalog(bool all=false) {
+inline const std::vector<ZodiacFigure>& zodiacCatalog(bool all=false) {
     static const auto zodiac=loadConstellationCatalog(":/qt/qml/EarthSky/data/zodiac.json",12);
     if(!all) return zodiac;
     // The zodiac stays first, preserving its existing frame indexes and rendering.
@@ -59,12 +79,12 @@ struct ZodiacFrame {
     std::vector<std::vector<Position>> figures;
     std::vector<Position> ecliptic;
 };
-Position vectorSubpoint(astro_vector_t vector,double sidereal) {
+inline Position vectorSubpoint(astro_vector_t vector,double sidereal) {
     auto eq=Astronomy_EquatorFromVector(vector);
     if(eq.status!=ASTRO_SUCCESS) qFatal("Star coordinate calculation failed");
     return {eq.dec,wrap(15*(eq.ra-sidereal))};
 }
-ZodiacFrame calculateZodiac(astro_time_t time) {
+inline ZodiacFrame calculateZodiac(astro_time_t time) {
     ZodiacFrame frame;
     auto rotation=Astronomy_Rotation_EQJ_EQD(&time);
     double sidereal=Astronomy_SiderealTime(&time);
@@ -89,10 +109,10 @@ ZodiacFrame calculateZodiac(astro_time_t time) {
     }
     return frame;
 }
-QPointF mapPoint(Position point,QSizeF size) {
+inline QPointF mapPoint(Position point,QSizeF size) {
     return {(point.lon+180)/360*size.width(),(90-point.lat)/180*size.height()};
 }
-void drawWrappedSegment(QPainter& painter,QSizeF size,Position a,Position b) {
+inline void drawWrappedSegment(QPainter& painter,QSizeF size,Position a,Position b) {
     auto start=mapPoint(a,size),end=mapPoint(b,size);
     double width=size.width();
     if(end.x()-start.x()>width/2) end.rx()-=width;
@@ -102,16 +122,16 @@ void drawWrappedSegment(QPainter& painter,QSizeF size,Position a,Position b) {
         painter.drawLine(start+offset,end+offset);
     }
 }
-Position interpolateSky(Position a,Position b,double fraction) {
+inline Position interpolateSky(Position a,Position b,double fraction) {
     // Normalize an interpolated 3D chord to follow the short great-circle arc.
     double x=(1-fraction)*std::cos(rad(a.lat))*std::cos(rad(a.lon))+fraction*std::cos(rad(b.lat))*std::cos(rad(b.lon));
     double y=(1-fraction)*std::cos(rad(a.lat))*std::sin(rad(a.lon))+fraction*std::cos(rad(b.lat))*std::sin(rad(b.lon));
     double z=(1-fraction)*std::sin(rad(a.lat))+fraction*std::sin(rad(b.lat));
     return {std::atan2(z,std::hypot(x,y))*180/pi,std::atan2(y,x)*180/pi};
 }
-constexpr double constellationLineOpacity = 0.7;
-constexpr double constellationLabelOpacity = 0.5;
-void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool showLabels=true,bool showAll=false) {
+inline constexpr double constellationLineOpacity = 0.7;
+inline constexpr double constellationLabelOpacity = 0.5;
+inline void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool showLabels=true,bool showAll=false) {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
     // Widths and dots are in display pixels, so enlarging the map stays restrained.
@@ -159,7 +179,7 @@ void paintZodiac(QPainter& painter,const ZodiacFrame& frame,QSizeF size,bool sho
         painter.restore();
     }
 }
-QImage zodiacImage(const ZodiacFrame& frame,QSize size,bool showLabels=true,bool showAll=false) {
+inline QImage zodiacImage(const ZodiacFrame& frame,QSize size,bool showLabels=true,bool showAll=false) {
     QImage image(size,QImage::Format_ARGB32_Premultiplied);image.fill(Qt::transparent);
     QPainter painter(&image);
     paintZodiac(painter,frame,size,showLabels,showAll);

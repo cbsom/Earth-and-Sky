@@ -2,7 +2,21 @@
 // Observer calculations shared by the location panel and built-in tests.
 // All daily events use the computer's civil date and time zone, not longitude.
 #pragma once
+#include <QDateTime>
+#include <QString>
+#include <QStringList>
+#include <QTimeZone>
+#include <QVariant>
+#include <QtMath>
+#include <algorithm>
+#include <array>
 #include <limits>
+#include <utility>
+#include <vector>
+#include "vendor/astronomy.h"
+
+inline constexpr std::array<astro_body_t,7> bodies={BODY_SUN,BODY_MOON,BODY_MERCURY,BODY_VENUS,BODY_MARS,BODY_JUPITER,BODY_SATURN};
+inline constexpr std::array<const char*,7> bodyNames={"Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"};
 
 inline astro_time_t astronomyTime(const QDateTime& instant) {
     const auto utc=instant.toUTC();const auto d=utc.date();const auto t=utc.time();

@@ -2,7 +2,7 @@
 
 ## Active release: 1.0.0 — started 2026-11-15
 
-Intended title: **Earth & Sky 1.0**. Intended tag: `v1.0.0`. Status: local candidate preparation; not published. Latest stable download links remain v0.1.1 until publication.
+**Earth & Sky 1.0** was published as the [stable v1.0.0 release](https://github.com/cbsom/Earth-and-Sky/releases/tag/v1.0.0) on 2026-11-15.
 
 - [x] Set CMake, Windows resource and installer metadata to 1.0.0.
 - [x] Draft [1.0 release notes](installer/RELEASE-NOTES-v1.0.0.md) and [validation record](installer/VALIDATION-v1.0.0.md).
@@ -11,10 +11,11 @@ Intended title: **Earth & Sky 1.0**. Intended tag: `v1.0.0`. Status: local candi
 - [x] Run the 1.0 regression suite and prepare the Windows candidate; final checksums are generated beside the assets.
 - [x] Freeze the candidate on `release/1.0.0`; the generated source snapshot and build-provenance file record its exact commit.
 - [x] Refresh 1.0 documentation screenshots.
-- [ ] Build and validate Linux .deb/AppImage packages on the supported base.
+- [x] Publish Linux .deb and AppImage packages and their checksums.
+- [ ] Complete Linux desktop validation on the supported base.
 - [ ] Perform normal desktop upgrade/uninstall and clean-machine checks.
 - [ ] Complete dependency corresponding-source distribution and notices review.
-- [ ] Publish the reviewed stable release, then update public download links.
+- [x] Publish the stable release and link its application and source downloads from the README.
 
 Historical audits below remain unchanged; they are not evidence that the 1.0 candidate passed these checks.
 

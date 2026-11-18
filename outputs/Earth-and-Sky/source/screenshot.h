@@ -1,9 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
-#include <QImageWriter>
-#include <QSaveFile>
+#include <QColor>
 #include <QFileInfo>
+#include <QFont>
+#include <QFontMetrics>
+#include <QImage>
+#include <QImageWriter>
+#include <QIODevice>
+#include <QPainter>
+#include <QPoint>
+#include <QRect>
+#include <QSaveFile>
+#include <QString>
+#include <QStringList>
 #include <QUrl>
+#include <QVector>
+#include <QtMath>
+#include <algorithm>
 
 // Write atomically: an encoding/write error must not truncate an existing image.
 inline QString writeScreenshot(QImage image,const QUrl& target,qreal scale=1) {

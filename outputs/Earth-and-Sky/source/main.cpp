@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 cbsom and contributors
 
+#include "zodiac.h"
+
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -29,19 +31,12 @@
 #include <algorithm>
 #include "vendor/astronomy.h"
 
-constexpr double pi = 3.14159265358979323846;
-double rad(double d) { return d * pi / 180.0; }
-double wrap(double d) { return d - 360.0 * std::floor((d + 180.0) / 360.0); }
 double smooth(double a, double b, double x)
 {
     double t = std::clamp((x - a) / (b - a), 0.0, 1.0);
     return t * t * (3.0 - 2.0 * t);
 }
-struct Position { double lat, lon; };
-#include "zodiac.h"
 struct BodyPosition { Position point; double distance; };
-constexpr std::array<astro_body_t,7> bodies={BODY_SUN,BODY_MOON,BODY_MERCURY,BODY_VENUS,BODY_MARS,BODY_JUPITER,BODY_SATURN};
-const std::array<const char*,7> bodyNames={"Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"};
 #include "locationinfo.h"
 #include "bodylabels.h"
 #include "screenshot.h"

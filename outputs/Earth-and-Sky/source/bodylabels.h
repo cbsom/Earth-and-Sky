@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 #include <QFontMetricsF>
+#include <QPointF>
+#include <QRectF>
+#include <QSizeF>
 #include <QVector>
 #include <limits>
 #include <algorithm>
