@@ -6,10 +6,14 @@
 #include <QQmlContext>
 #include <QQuickImageProvider>
 #include <QQuickWindow>
+#include <QQuickItemGrabResult>
+#include <QStandardPaths>
+#include <QDir>
 #include <QQuickPaintedItem>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QDateTime>
+#include <QTimeZone>
 #include <QElapsedTimer>
 #include <QTimer>
 #include <QPainter>
@@ -20,6 +24,7 @@
 #include <QVariantList>
 #include <QSettings>
 #include <array>
+#include <vector>
 #include <cmath>
 #include <algorithm>
 #include "vendor/astronomy.h"
@@ -37,6 +42,10 @@ struct Position { double lat, lon; };
 struct BodyPosition { Position point; double distance; };
 constexpr std::array<astro_body_t,7> bodies={BODY_SUN,BODY_MOON,BODY_MERCURY,BODY_VENUS,BODY_MARS,BODY_JUPITER,BODY_SATURN};
 const std::array<const char*,7> bodyNames={"Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"};
+#include "locationinfo.h"
+#include "bodylabels.h"
+#include "screenshot.h"
+
 struct Ephemeris {
     ZodiacFrame zodiac;
     std::array<BodyPosition,7> bodies;
@@ -285,6 +294,10 @@ class Sky : public QObject
     Q_PROPERTY(QStringList combinedOptions READ combinedOptions CONSTANT)
     Q_PROPERTY(double earthOffset READ earthOffset NOTIFY viewChanged)
     Q_PROPERTY(double skyOffset READ skyOffset NOTIFY changed)
+    QDate cachedLocationDate;
+    double cachedLatitude=1000, cachedLongitude=1000;
+    QByteArray cachedZone;
+    QVariantMap cachedLocationDay;
     QSettings settings{"EarthSky","EarthSky"};
     // The instant currently rendered on the map.
     QDateTime displayedInstant;
@@ -360,8 +373,15 @@ class Sky : public QObject
         currentEarthOffset=offsetAt(rotationInstant());
         ++version; emit changed(); emit viewChanged();
     }
+protected:
+    bool eventFilter(QObject* object,QEvent* event) override {
+        if(event->type()==QEvent::MouseButtonPress || event->type()==QEvent::TouchBegin || event->type()==QEvent::TabletPress)
+            emit pointerPressed();
+        return QObject::eventFilter(object,event);
+    }
 public:
     Sky() {
+        if(qApp)qApp->installEventFilter(this);
         if(!settings.value("migration/daylightImported",false).toBool()) {
             QSettings legacy("Daylight","Daylight");
             const auto keys=legacy.allKeys();
@@ -564,8 +584,79 @@ public:
     Q_INVOKABLE void stepDay(int direction) { stepTime(direction,"day"); }
     Q_INVOKABLE void goToNow() {
         stopAnimation();
-        inertialView=false;mEarthMode=false;
+        useEarthFixedFrame();mEarthMode=false;
         liveMode=true; renderTime(QDateTime::currentDateTimeUtc());
+    }
+    // Return validation errors without changing time or interrupting playback.
+    Q_INVOKABLE QString selectDateTime(const QString& dateText,const QString& timeText,bool utc) {
+        const auto date=QDate::fromString(dateText,"yyyy-MM-dd");
+        const auto time=QTime::fromString(timeText,"HH:mm:ss");
+        if(!date.isValid() || date.year()<1 || date.year()>9999 || date.toString("yyyy-MM-dd")!=dateText)
+            return "Enter a valid date as YYYY-MM-DD (0001 through 9999).";
+        if(!time.isValid() || time.toString("HH:mm:ss")!=timeText)
+            return "Enter a valid time as HH:MM:SS using the 24-hour clock.";
+        const auto zone=utc?QTimeZone::utc():QTimeZone::systemTimeZone();
+        const QDateTime target(date,time,zone,QDateTime::TransitionResolution::Reject);
+        if(!target.isValid()) return "This local time is skipped or repeated by a clock change. Choose UTC to specify the instant.";
+        stopAnimation();
+        // Preserve the selected reference frame and camera, just as stepping does.
+        liveMode=false;renderTime(target.toUTC());
+        return {};
+    }
+    Q_INVOKABLE void pauseTime() {
+        stopAnimation();liveMode=false;emit changed();
+    }
+    Q_INVOKABLE QUrl screenshotUrl() const {
+        auto folder=QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+        if(folder.isEmpty() || !QDir(folder).exists())folder=QDir::homePath();
+        return QUrl::fromLocalFile(QDir(folder).filePath("Earth-and-Sky-"+displayedInstant.toUTC().toString("yyyy-MM-dd-HHmmss")+"-UTC.png"));
+    }
+    Q_INVOKABLE QString saveScreenshot(QObject* result,const QUrl& target,qreal scale) const {
+        const auto grab=qobject_cast<QQuickItemGrabResult*>(result);
+        return writeScreenshot(grab?grab->image():QImage(),target,scale);
+    }
+    Q_INVOKABLE QVariantMap datePickerFields(const QString& text,bool utc) const {
+        auto date=QDate::fromString(text,"yyyy-MM-dd");
+        if(!date.isValid() || date.year()<1 || date.year()>9999 || date.toString("yyyy-MM-dd")!=text)
+            date=(utc?displayedInstant.toUTC():displayedInstant.toLocalTime()).date();
+        return {{"year",date.year()},{"month",date.month()-1}};
+    }
+    Q_INVOKABLE QVariantMap dateTimeFields(bool utc) const {
+        const auto time=utc?displayedInstant.toUTC():displayedInstant.toLocalTime();
+        return {{"date",time.toString("yyyy-MM-dd")},{"time",time.toString("HH:mm:ss")},
+                {"zone",QString::fromUtf8(QTimeZone::systemTimeZoneId())}};
+    }
+    Q_INVOKABLE QVariantMap locationInfo(double latitude,double longitude) {
+        if(!std::isfinite(latitude) || !std::isfinite(longitude) || std::abs(latitude)>90 || std::abs(longitude)>180)
+            return {{"error","Select a valid location on Earth."}};
+        const auto date=displayedInstant.toLocalTime().date();
+        const auto zone=QTimeZone::systemTimeZone();
+        if(date!=cachedLocationDate || latitude!=cachedLatitude || longitude!=cachedLongitude || zone.id()!=cachedZone) {
+            cachedLocationDay=locationDay(date,zone,latitude,longitude);
+            cachedLocationDate=date;cachedLatitude=latitude;cachedLongitude=longitude;cachedZone=zone.id();
+        }
+        auto result=cachedLocationDay;
+        auto rows=result.value("bodies").toList();
+        const astro_observer_t observer{latitude,longitude,0};
+        auto time=astronomyTime(displayedInstant);
+        const double sunAltitude=bodyAltitude(BODY_SUN,time,observer,false);
+        for(int i=0;i<rows.size();++i) {
+            auto row=rows[i].toMap();
+            const double altitude=bodyAltitude(bodies[i],time,observer,true);
+            const bool valid=std::isfinite(altitude);
+            const bool above=valid && altitude>0;
+            row["altitude"]=valid?QString::number(altitude,'f',1)+QString::fromUtf8("°"):QString("Unavailable");
+            row["above"]=above;
+            row["status"]=!valid?"Unavailable":!above?"Below horizon":i<2?"Above horizon":
+                !std::isfinite(sunAltitude)?"Above horizon":sunAltitude>0?"Above horizon / daylight":
+                sunAltitude>-18?"Above horizon / twilight":"Above horizon / dark sky";
+            rows[i]=row;
+        }
+        result["bodies"]=rows;
+        result["skyCondition"]=!std::isfinite(sunAltitude)?"Sky conditions unavailable":sunAltitude>0?"Daylight":
+            sunAltitude>-6?"Civil twilight":sunAltitude>-12?"Nautical twilight":sunAltitude>-18?"Astronomical twilight":"Night";
+        result["instant"]=displayedTime();
+        return result;
     }
     bool live() const { return liveMode; }
     QDateTime displayedUtc() const { return displayedInstant; }
@@ -596,11 +687,64 @@ public:
         }
         return result;
     }
+    Q_INVOKABLE QVariantList mapLabels(double width,double height,bool showMoon,bool showPlanets) const {
+        auto list=markers();QVector<QRectF> obstacles;
+        const auto shown=[&](const QVariantMap& item){const auto name=item["name"].toString();return name=="Sun" || (name=="Moon"?showMoon:showPlanets);};
+        for(const auto& value:list){auto item=value.toMap();if(!shown(item))continue;
+            const double size=item["size"].toDouble();
+            obstacles.append(QRectF(item["x"].toDouble()*width-size/2,item["y"].toDouble()*height-size/2,size,size));
+        }
+        QFont font("Segoe UI");font.setPixelSize(12);const QFontMetricsF metrics(font);QVariantList labels;
+        for(const auto& value:list){auto item=value.toMap();
+            const QPointF center(item["x"].toDouble()*width,item["y"].toDouble()*height);
+            const auto rect=placeBodyLabel(center,item["size"].toDouble(),QSizeF(metrics.horizontalAdvance(item["name"].toString())+8,metrics.height()+2),QRectF(0,0,width,height),obstacles);
+            labels.append(QVariantMap{{"x",rect.x()-center.x()},{"y",rect.y()-center.y()},{"width",rect.width()},{"height",rect.height()}});
+            if(shown(item))obstacles.append(rect);
+        }
+        return labels;
+    }
     int revision() const { return version; }
 signals:
+    void pointerPressed();
     void changed();
     void viewChanged();
     void frameRebased(double turns);
+};
+// Render only the visible flat-map viewport. Geometry follows zoom, but pen
+// widths and fonts stay in display pixels; no enlarged full-world sky texture.
+class FlatSkyView : public QQuickPaintedItem {
+    Q_OBJECT
+    Q_PROPERTY(QObject* sky READ sky WRITE setSky NOTIFY skyChanged)
+    Q_PROPERTY(QSizeF worldSize MEMBER mWorldSize NOTIFY optionsChanged)
+    Q_PROPERTY(QPointF origin MEMBER mOrigin NOTIFY optionsChanged)
+    Q_PROPERTY(bool labels MEMBER mLabels NOTIFY optionsChanged)
+    Q_PROPERTY(bool allConstellations MEMBER mAll NOTIFY optionsChanged)
+    Sky* mSky=nullptr;
+    QSizeF mWorldSize;
+    QPointF mOrigin;
+    bool mLabels=true,mAll=false;
+public:
+    FlatSkyView(QQuickItem* parent=nullptr):QQuickPaintedItem(parent) {
+        setAntialiasing(true);
+        connect(this,&FlatSkyView::optionsChanged,this,[this]{update();});
+    }
+    QObject* sky() const {return mSky;}
+    void setSky(QObject* object) {
+        if(mSky==object)return;
+        if(mSky)disconnect(mSky,nullptr,this,nullptr);
+        mSky=qobject_cast<Sky*>(object);
+        if(mSky)connect(mSky,&Sky::changed,this,[this]{update();});
+        emit skyChanged();update();
+    }
+    void paint(QPainter* painter) override {
+        if(!mSky || mWorldSize.width()<=0 || mWorldSize.height()<=0)return;
+        painter->setClipRect(QRectF(0,0,width(),height()));
+        painter->translate(mOrigin);
+        paintZodiac(*painter,mSky->e.zodiac,mWorldSize,mLabels,mAll);
+    }
+signals:
+    void skyChanged();
+    void optionsChanged();
 };
 class Images : public QQuickImageProvider
 {
@@ -803,6 +947,60 @@ bool selfTest() {
     ok=ok && combinedCheck.rotating() && combinedCheck.animationDirection()==-1;
     combinedCheck.navigate(-1,true);ok=ok && !combinedCheck.rotating() && combinedCheck.animationDirection()==0;
     combinedCheck.goToNow();ok=ok && !combinedCheck.earthMode() && !combinedCheck.skyFixed() && combinedCheck.live();
+    // Date entry must reject invalid values without changing the current instant.
+    const auto heldTime=combinedCheck.displayedUtc();
+    ok=ok && !combinedCheck.selectDateTime("2026-02-30","12:00:00",true).isEmpty() && combinedCheck.displayedUtc()==heldTime;
+    ok=ok && !combinedCheck.selectDateTime("2026-03-20","24:00:00",true).isEmpty() && combinedCheck.displayedUtc()==heldTime;
+    ok=ok && combinedCheck.selectDateTime("2024-02-29","23:15:30",true).isEmpty();
+    ok=ok && combinedCheck.displayedUtc()==QDateTime(QDate(2024,2,29),QTime(23,15,30),QTimeZone::utc()) && !combinedCheck.live();
+    combinedCheck.navigate(1,true);
+    ok=ok && combinedCheck.selectDateTime("2026-03-20","12:00:00",true).isEmpty() && combinedCheck.animationDirection()==0;
+    const auto utcZone=QTimeZone::utc();
+    auto equinoxDay=locationDay(QDate(2026,3,20),utcZone,51.48,0);
+    auto solar=equinoxDay["bodies"].toList().first().toMap();
+    const auto rise=solar["riseInstant"].toDateTime(),set=solar["setInstant"].toDateTime();
+    ok=ok && rise.isValid() && set.isValid() && rise.time().hour()==6 && set.time().hour()==18;
+    // Rise/set uses the apparent upper limb, not a geocentric map subpoint.
+    const astro_observer_t greenwich{51.48,0,0};
+    const double riseAltitude=bodyAltitude(BODY_SUN,astronomyTime(rise),greenwich,false);
+    ok=ok && riseAltitude> -1.1 && riseAltitude< -0.5;
+    auto polarSummer=locationDay(QDate(2026,6,21),utcZone,89,0);
+    auto polarWinter=locationDay(QDate(2026,12,21),utcZone,89,0);
+    ok=ok && polarSummer["daylight"]=="24 h 00 min" && polarWinter["daylight"]=="0 h 00 min";
+    ok=ok && polarSummer["bodies"].toList().first().toMap()["rise"]=="None";
+    auto info=combinedCheck.locationInfo(51.48,0);auto infoRows=info["bodies"].toList();
+    ok=ok && infoRows.size()==7 && infoRows[2].toMap()["name"]=="Mercury" && infoRows[6].toMap()["name"]=="Saturn";
+    for(int i=0;i<7;++i) {
+        auto row=infoRows[i].toMap();
+        auto instant=astronomyTime(combinedCheck.displayedUtc());
+        ok=ok && row["above"].toBool()==(bodyAltitude(bodies[i],instant,greenwich,true)>0);
+    }
+    ok=ok && combinedCheck.locationInfo(91,0).contains("error");
+    const auto ny=QTimeZone("America/New_York");
+    if(ny.isValid()) {
+        ok=ok && QDate(2026,3,8).startOfDay(ny).secsTo(QDate(2026,3,9).startOfDay(ny))==23*3600;
+        ok=ok && QDate(2026,11,1).startOfDay(ny).secsTo(QDate(2026,11,2).startOfDay(ny))==25*3600;
+        ok=ok && !QDateTime(QDate(2026,3,8),QTime(2,30),ny,QDateTime::TransitionResolution::Reject).isValid();
+        ok=ok && !QDateTime(QDate(2026,11,1),QTime(1,30),ny,QDateTime::TransitionResolution::Reject).isValid();
+        const QDate longDate(2026,11,1);
+        const auto longDay=locationDay(longDate,ny,0,22.5);
+        qint64 sampledDaylight=0;
+        for(auto instant=longDate.startOfDay(ny);instant<longDate.addDays(1).startOfDay(ny);instant=instant.addSecs(300))
+            if(bodyAltitude(BODY_SUN,astronomyTime(instant),astro_observer_t{0,22.5,0},false)>-0.833)sampledDaylight+=300000;
+        ok=ok && std::abs(longDay["daylightMilliseconds"].toLongLong()-sampledDaylight)<600000;
+        const auto dstDay=locationDay(QDate(2026,3,8),ny,40.71,-74.01);
+        for(auto value:dstDay["bodies"].toList())for(const auto& key:{"riseInstant","setInstant"}) {
+            const auto event=value.toMap().value(key).toDateTime();
+            ok=ok && (!event.isValid() || event.toTimeZone(ny).date()==QDate(2026,3,8));
+        }
+    }
+    QVector<QRectF> crowdedLabels{QRectF(90,90,20,20)};
+    for(int i=0;i<7;++i) {
+        const auto label=placeBodyLabel(QPointF(100,100),20,QSizeF(58,18),QRectF(0,0,240,240),crowdedLabels);
+        for(const auto& occupied:crowdedLabels)ok=ok && !label.intersects(occupied);
+        ok=ok && QRectF(0,0,240,240).contains(label);crowdedLabels.append(label);
+    }
+    qInfo()<<"Date/time, observer events, polar daylight and DST tests:"<<(ok?"PASS":"FAIL");
     GlobeView globeCheck; globeCheck.setWidth(800); globeCheck.setHeight(600);
     for(auto point : {QPointF(0,15),QPointF(25,35),QPointF(-30,-10)}) {
         auto projected=globeCheck.project(point.x(),point.y());
@@ -828,6 +1026,7 @@ int main(int argc, char **argv)
     Sky sky;
     sky.refresh();
     qmlRegisterType<GlobeView>("EarthSky.Globe",1,0,"GlobeView");
+    qmlRegisterType<FlatSkyView>("EarthSky.Globe",1,0,"FlatSkyView");
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("sky",&sky);
     engine.addImageProvider("earth",new Images(&sky));

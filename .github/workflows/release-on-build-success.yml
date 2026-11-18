@@ -1,4 +1,4 @@
-name: Release on successful build
+name: Development prerelease on successful build
 
 on:
   workflow_run:
@@ -36,7 +36,10 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.value }}
           target_commitish: ${{ github.event.workflow_run.head_sha }}
-          name: Release ${{ steps.tag.outputs.value }}
+          name: Development build ${{ steps.tag.outputs.value }}
+          prerelease: true
+          make_latest: "false"
+          body: "Development compiler archives; these are not the stable desktop installers. Use the latest stable release for normal installation."
           generate_release_notes: true
           files: |
             release-assets/**

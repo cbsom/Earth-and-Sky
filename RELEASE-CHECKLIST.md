@@ -1,5 +1,23 @@
 # Release preparation
 
+## Active release: 1.0.0 — started 2026-11-15
+
+Intended title: **Earth & Sky 1.0**. Intended tag: `v1.0.0`. Status: local candidate preparation; not published. Latest stable download links remain v0.1.1 until publication.
+
+- [x] Set CMake, Windows resource and installer metadata to 1.0.0.
+- [x] Draft [1.0 release notes](installer/RELEASE-NOTES-v1.0.0.md) and [validation record](installer/VALIDATION-v1.0.0.md).
+- [x] Configure automatic date-based CI releases as prereleases with latest disabled.
+- [x] Enable the optional UI regression suite in Windows/Linux CI configuration.
+- [x] Run the 1.0 regression suite and prepare the Windows candidate; final checksums are generated beside the assets.
+- [x] Freeze the candidate on `release/1.0.0`; the generated source snapshot and build-provenance file record its exact commit.
+- [x] Refresh 1.0 documentation screenshots.
+- [ ] Build and validate Linux .deb/AppImage packages on the supported base.
+- [ ] Perform normal desktop upgrade/uninstall and clean-machine checks.
+- [ ] Complete dependency corresponding-source distribution and notices review.
+- [ ] Publish the reviewed stable release, then update public download links.
+
+Historical audits below remain unchanged; they are not evidence that the 1.0 candidate passed these checks.
+
 ## Source and licensing
 
 - Original application: GPL-3.0-or-later. Retain LICENSE and THIRD-PARTY-NOTICES.txt in source and packages.

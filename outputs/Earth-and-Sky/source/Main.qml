@@ -3,6 +3,8 @@
 
 import QtQuick
 import QtQuick.Window
+import QtQuick.Dialogs
+import QtQuick.Controls.Basic as Controls
 import EarthSky.Globe 1.0
 
 Window {
@@ -17,6 +19,42 @@ Window {
     property bool globeMode: true
     property bool preferencesReady: false
     property var homeCity: ({})
+    property bool locationPanelOpen: false
+    property bool exporting: false
+    property int exportGeneration: 0
+    property string exportMessage: ""
+    function openExport() {
+        sky.pauseTime()
+        exportDialog.error = ""; exportMessage = ""; exportDialog.visible = true
+        exportChoose.forceActiveFocus()
+    }
+    function closeExport() { exportDialog.visible = false; screenshotButton.forceActiveFocus() }
+    function performExport(target) {
+        sky.pauseTime()
+        const generation = ++exportGeneration
+        exportDialog.visible = false; exporting = true; exportMessage = ""
+        const item = window.globeMode ? globe : mapViewport
+        const scale = Math.max(1, Screen.devicePixelRatio)
+        Qt.callLater(function() {
+            const started = item.grabToImage(function(result) {
+                if (generation !== window.exportGeneration) return
+                const error = sky.saveScreenshot(result, target, scale)
+                window.exporting = false
+                if (error) { exportDialog.error = error; exportDialog.visible = true; exportChoose.forceActiveFocus() }
+                else { window.exportMessage = "Saved image: " + target; exportToastTimer.restart(); screenshotButton.forceActiveFocus() }
+            }, Qt.size(Math.round(item.width * scale), Math.round(item.height * scale)))
+            if (!started) { window.exporting = false; exportDialog.error = "The view could not be captured. Try again with the window visible."; exportDialog.visible = true }
+        })
+    }
+    readonly property real panelInset: locationPanelOpen && width >= 1100 ? locationPanel.width + 18 : 0
+    function openDateTime() {
+        sky.stopAnimation()
+        const fields = sky.dateTimeFields(false)
+        dateField.text = fields.date; timeField.text = fields.time
+        timeDialog.utc = false; timeDialog.error = ""; timeDialog.visible = true
+        dateField.forceActiveFocus(); dateField.selectAll()
+    }
+    function closeDateTime() { calendarPopup.close(); timeDialog.visible = false; dateTimeButton.forceActiveFocus() }
     onGlobeModeChanged: { if (preferencesReady) sky.saveGlobeMode(globeMode) }
     function centerHome() {
         mapViewport.fitMap(); globe.fitView()
@@ -39,12 +77,16 @@ Window {
         window.globeMode = true
         globe.centerOnBody(body)
     }
+    onActiveChanged: if (!active) { exportMessage = ""; exportToastTimer.stop() }
     onClosing: sky.stopAnimation()
     onVisibleChanged: { if (!visible) sky.stopAnimation() }
-    Shortcut { sequence: "Escape"; enabled: !intervalMenu.visible && !cityDialog.visible; onActivated: sky.stopAnimation() }
+    Shortcut { sequence: "Escape"; enabled: !window.exporting && !intervalMenu.visible && !cityDialog.visible && !timeDialog.visible && !exportDialog.visible && !exportFileDialog.visible; onActivated: sky.stopAnimation() }
+
+    Shortcut { sequence: "Ctrl+T"; enabled: !window.exporting && !timeDialog.visible && !cityDialog.visible && !exportDialog.visible && !exportFileDialog.visible; onActivated: window.openDateTime() }
 
     Connections {
         target: sky
+        function onPointerPressed() { window.exportMessage = ""; exportToastTimer.stop() }
         function onFrameRebased(turns) {
             mapViewport.resettingFollow = true
             mapViewport.centerX -= turns
@@ -60,6 +102,7 @@ Window {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.rightMargin: window.panelInset
         anchors.bottom: footer.top
         clip: true
         property bool horizonActive: false
@@ -73,7 +116,13 @@ Window {
         function setObserver(longitude, latitude) {
             observerLongitude = wrapUnit((longitude + 180) / 360); observerLatitude = latitude
             horizonActive = true
+            window.locationPanelOpen = true
             beginFollow("place", observerLongitude, (90 - latitude) / 180, "", zoom)
+            locationPanel.refresh()
+        }
+        readonly property var bodyLabels: {
+            const revision = sky.revision
+            return sky.mapLabels(map.width, map.height, moonToggle.checked, planetsToggle.checked)
         }
         property real zoom: 1
         property real centerX: 0.5
@@ -155,8 +204,6 @@ Window {
             id: map
             width: mapViewport.width * mapViewport.zoom
             height: mapViewport.height * mapViewport.zoom
-            readonly property int skyRasterWidth: Math.min(2560, Math.max(1, Math.round(width)))
-            readonly property int skyRasterHeight: Math.max(1, Math.round(skyRasterWidth * height / Math.max(1, width)))
             y: mapViewport.height / 2 - mapViewport.boundedCenterY * height
             // Adjacent tiles share cached textures and hide the longitude seam.
             Repeater {
@@ -182,14 +229,25 @@ Window {
                         cache: true
                         smooth: true
                     }
-                    Image {
-                        anchors.fill: parent
-                        visible: constellationsToggle.checked || allConstellationsToggle.checked
-                        source: visible ? "image://earth/zodiac/" + (allConstellationsToggle.checked ? "all/" : "") + (labelsToggle.checked ? "labels/" : "no-labels/") + sky.revision : ""
-                        sourceSize: Qt.size(map.skyRasterWidth, map.skyRasterHeight)
-                        cache: true
-                        smooth: true
-                    }
+                }
+            }
+            FlatSkyView {
+                id: flatSkyOverlay; objectName: "flatSkyOverlay"
+                x: 0; y: -map.y
+                width: mapViewport.width; height: mapViewport.height
+                visible: !window.globeMode && (constellationsToggle.checked || allConstellationsToggle.checked)
+                sky: window.skyModel
+                worldSize: Qt.size(map.width, map.height)
+                origin: Qt.point(mapViewport.width / 2 - mapViewport.wrapUnit(mapViewport.cameraX - window.skyModel.skyOffset) * map.width, map.y)
+                labels: labelsToggle.checked
+                allConstellations: allConstellationsToggle.checked
+            }
+            Repeater {
+                model: [-1, 0, 1]
+                delegate: Item {
+                    required property int modelData
+                    x: mapViewport.width / 2 - mapViewport.wrapUnit(mapViewport.cameraX - sky.skyOffset) * map.width + modelData * map.width
+                    width: map.width; height: map.height
                     // Keep marker sizes readable while zooming the geographic area.
                     Repeater {
                         model: 7
@@ -207,14 +265,16 @@ Window {
                                 cache: true
                                 smooth: true
                             }
+                            readonly property var bodyLabel: mapViewport.bodyLabels[index] || ({x: -30, y: 20, width: 60, height: 18})
                             Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                y: marker.size * (marker.name === "Sun" ? 0.42 : marker.name === "Moon" ? 0.48 : 0.31)
+                                x: parent.bodyLabel.x; y: parent.bodyLabel.y
+                                width: parent.bodyLabel.width; height: parent.bodyLabel.height
+                                horizontalAlignment: Text.AlignHCenter
                                 visible: labelsToggle.checked
                                 text: marker.name
                                 font.family: "Segoe UI"
-                                font.pixelSize: 9
-                                color: "#a5a9ad"
+                                font.pixelSize: 12
+                                color: "#e1ebf3"
                                 style: Text.Outline
                                 styleColor: "#182330"
                             }
@@ -374,7 +434,7 @@ Window {
     GlobeView {
         id: globe
         objectName: "globeView"
-        anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: footer.top
+        anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right; anchors.rightMargin: window.panelInset; anchors.bottom: footer.top
         visible: window.globeMode
         sky: window.skyModel
         layers: ({sun: true, moon: moonToggle.checked, planets: planetsToggle.checked,
@@ -384,40 +444,86 @@ Window {
         observer: Qt.point(mapViewport.observerLongitude * 360 - 180, mapViewport.observerLatitude)
         onLocationSelected: (longitude, latitude) => { mapViewport.setObserver(longitude, latitude); globe.centerOn(longitude, latitude) }
     }
-    Rectangle {
-        anchors.left: parent.left; anchors.top: parent.top; anchors.margins: 10
-        width: 112; height: 28; radius: 6; z: 20
-        color: "#dd101d29"; border.color: "#344754"
-        TimeAction {
-            objectName: "flatMapViewButton"
-            x: 0; width: 56; height: 28
-            label: "Flat map"; highlighted: !window.globeMode
-            description: "View the sky above a flat world map"
-            onTriggered: window.globeMode = false
-        }
-        Rectangle { x: 56; y: 7; width: 1; height: 14; color: "#344754" }
-        TimeAction {
-            objectName: "globeViewButton"
-            x: 56; width: 56; height: 28
-            label: "Globe"; highlighted: window.globeMode
-            description: "View Earth inside a celestial sphere; drag to turn and scroll to zoom"
-            onTriggered: {
-                window.globeMode = true
-                if (mapViewport.horizonActive) globe.centerOn(mapViewport.observerLongitude * 360 - 180, mapViewport.observerLatitude)
+    component ToolbarAction: TimeAction {
+        id: tool
+        property string icon
+        width: 32; height: 32
+        label: ""
+        Rectangle { anchors.fill: parent; anchors.margins: 2; radius: 4; color: tool.highlighted ? "#203340" : "transparent"; z: -1 }
+        Canvas {
+            id: toolGlyph; anchors.centerIn: parent; width: 20; height: 20
+            opacity: tool.enabled ? 1 : .4
+            Connections { target: tool; function onHighlightedChanged() { toolGlyph.requestPaint() } function onIconChanged() { toolGlyph.requestPaint() } }
+            onPaint: {
+                const c = getContext("2d"); c.reset()
+                c.strokeStyle = tool.highlighted ? "#c1d2dc" : "#8b9eaa"; c.lineWidth = 1.3; c.lineCap = "round"; c.lineJoin = "round"
+                c.beginPath()
+                if (tool.icon === "map") {
+                    c.moveTo(2,4); c.lineTo(7,2); c.lineTo(13,4); c.lineTo(18,2); c.lineTo(18,16); c.lineTo(13,18); c.lineTo(7,16); c.lineTo(2,18); c.closePath()
+                    c.moveTo(7,2); c.lineTo(7,16); c.moveTo(13,4); c.lineTo(13,18)
+                } else if (tool.icon === "globe") {
+                    c.arc(10,10,8,0,2*Math.PI); c.moveTo(18,10); c.lineTo(2,10); c.moveTo(10,2); c.bezierCurveTo(3,6,3,14,10,18); c.bezierCurveTo(17,14,17,6,10,2)
+                } else if (tool.icon === "pin") {
+                    c.moveTo(10,19); c.bezierCurveTo(8,16,3,12,3,8); c.bezierCurveTo(3,-1,17,-1,17,8); c.bezierCurveTo(17,12,12,16,10,19); c.closePath(); c.stroke(); c.beginPath(); c.arc(10,7,2,0,2*Math.PI)
+                } else if (tool.icon === "info") {
+                    c.arc(10,10,8,0,2*Math.PI); c.stroke(); c.beginPath()
+                    c.moveTo(10,9); c.lineTo(10,14); c.moveTo(8,14); c.lineTo(12,14)
+                    c.moveTo(8,9); c.lineTo(10,9); c.moveTo(10,6); c.lineTo(10,6.3)
+                } else if (tool.icon === "calendar") {
+                    c.rect(2,4,16,14); c.moveTo(2,8); c.lineTo(18,8); c.moveTo(6,2); c.lineTo(6,6); c.moveTo(14,2); c.lineTo(14,6)
+                    c.moveTo(6,11); c.lineTo(7,11); c.moveTo(12,11); c.lineTo(13,11); c.moveTo(6,14); c.lineTo(7,14)
+                } else if (tool.icon === "camera") {
+                    c.moveTo(2,6); c.lineTo(6,6); c.lineTo(8,3); c.lineTo(13,3); c.lineTo(15,6); c.lineTo(18,6); c.lineTo(18,17); c.lineTo(2,17); c.closePath(); c.stroke(); c.beginPath(); c.arc(10,11,3,0,2*Math.PI)
+                }
+                c.stroke()
             }
         }
     }
     Rectangle {
-        anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 10
-        width: Math.max(100, homeCityTextMetrics.width + 28); height: 28; radius: 6; z: 20
-        TextMetrics { id: homeCityTextMetrics; text: homeCityAction.label; font.family: "Segoe UI"; font.pixelSize: 11 }
-        color: "#dd101d29"; border.color: "#344754"
-        TimeAction {
-            id: homeCityAction
-            anchors.fill: parent; objectName: "homeCityButton"
-            label: window.homeCity.name ? window.homeCity.name.substring(0, window.homeCity.name.lastIndexOf(", ")) : "Home city…"
-            description: window.homeCity.name ? "Home: " + window.homeCity.name : "Choose your home city"
-            onTriggered: { cityDialog.visible = true; citySearch.forceActiveFocus() }
+        id: viewToolbar; objectName: "viewToolbar"
+        anchors.left: parent.left; anchors.top: parent.top; anchors.margins: 8
+        width: viewActions.width + 8; height: 36; radius: 6; z: 40
+        color: "#b30b131d"; border.color: "#293a47"
+        Accessible.role: Accessible.ToolBar; Accessible.name: "Map view tools"
+        Row {
+            id: viewActions; x: 4; y: 2; spacing: 2
+            ToolbarAction {
+                objectName: "globeViewButton"; icon: "globe"; highlighted: window.globeMode
+                description: "Globe — drag to turn and scroll to zoom"
+                Accessible.role: Accessible.RadioButton; Accessible.checkable: true; Accessible.checked: window.globeMode
+                onTriggered: { window.globeMode = true; if (mapViewport.horizonActive) globe.centerOn(mapViewport.observerLongitude * 360 - 180, mapViewport.observerLatitude) }
+            }
+            ToolbarAction {
+                objectName: "flatMapViewButton"; icon: "map"; highlighted: !window.globeMode
+                description: "Flat map — view the sky above a flat world map"
+                Accessible.role: Accessible.RadioButton; Accessible.checkable: true; Accessible.checked: !window.globeMode
+                onTriggered: window.globeMode = false
+            }
+        }
+    }
+    Rectangle {
+        id: topToolbar; objectName: "topToolbar"
+        anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 8
+        width: toolbarActions.width + 8; height: 36; radius: 6; z: 40
+        color: "#b30b131d"; border.color: "#293a47"
+        Accessible.role: Accessible.ToolBar; Accessible.name: "Screenshot, location and information tools"
+        Row {
+            id: toolbarActions; x: 4; y: 2; spacing: 2
+            ToolbarAction {
+                id: screenshotButton; objectName: "screenshotButton"; icon: "camera"; enabled: !window.exporting
+                description: window.exporting ? "Saving image…" : "Save image — export PNG or JPEG (Ctrl+S)"
+                onTriggered: window.openExport()
+            }
+            ToolbarAction {
+                objectName: "homeCityButton"; icon: "pin"
+                description: "Choose Reset location (home city)" + (window.homeCity.name ? ": " + window.homeCity.name : "")
+                onTriggered: { cityDialog.visible = true; citySearch.forceActiveFocus() }
+            }
+            ToolbarAction {
+                objectName: "locationInfoButton"; icon: "info"; highlighted: window.locationPanelOpen
+                description: "My Location info — show rise and set times for the selected map location"
+                onTriggered: window.locationPanelOpen = !window.locationPanelOpen
+            }
         }
     }
     Rectangle {
@@ -427,8 +533,8 @@ Window {
             anchors.centerIn: parent; width: Math.min(440, window.width - 32); height: Math.min(440, window.height - 32)
             radius: 10; color: "#142330"; border.color: "#496779"
             MouseArea { anchors.fill: parent }
-            Text { x: 18; y: 16; text: "Home city"; color: "#d5e3ee"; font.pixelSize: 18 }
-            Text { x: 18; y: 44; text: "Center here on opening and Reset"; color: "#99bdce"; font.pixelSize: 12 }
+            Text { x: 18; y: 16; text: "Reset location"; color: "#d5e3ee"; font.pixelSize: 18 }
+            Text { x: 18; y: 44; text: "Home city · center here on opening and Reset"; color: "#99bdce"; font.pixelSize: 12 }
             Rectangle {
                 x: 18; y: 72; width: parent.width - 36; height: 36; radius: 5; color: "#080f18"; border.color: "#496779"
                 TextInput {
@@ -462,6 +568,320 @@ Window {
         y: 15
         text: "Drag to turn · Scroll to zoom"
         font.family: "Segoe UI"; font.pixelSize: 11; color: "#8197aa"
+    }
+    // Location details stay independent of layer visibility and camera mode.
+    Rectangle {
+        id: locationPanel; objectName: "locationInfoPanel"
+        visible: window.locationPanelOpen
+        anchors.right: parent.right; anchors.rightMargin: 10; y: 48
+        width: Math.min(392, window.width - 20); height: Math.max(0, footer.y - y - 8)
+        z: 30; radius: 8; color: "#f0101e2b"; border.color: "#496779"
+        property var info: ({})
+        function refresh() {
+            if (visible && mapViewport.horizonActive)
+                info = sky.locationInfo(mapViewport.observerLatitude, mapViewport.observerLongitude * 360 - 180)
+        }
+        onVisibleChanged: if (visible) refresh()
+        MouseArea { anchors.fill: parent }
+        Connections {
+            target: sky
+            function onChanged() { locationPanel.refresh() }
+        }
+        Text { x: 14; y: 12; text: "My Location"; font.pixelSize: 18; font.weight: Font.DemiBold; color: "#e1edf5" }
+        TimeAction {
+            anchors.right: parent.right; anchors.rightMargin: 8; y: 8; width: 64; height: 32
+            label: "Close"; description: "Close location information; keep the selected horizon"
+            onTriggered: window.locationPanelOpen = false
+        }
+        Flickable {
+            id: locationScroll; objectName: "locationInfoScroll"
+            x: 14; y: 50; width: parent.width - 28; height: parent.height - 62
+            contentHeight: locationContent.height; clip: true; boundsBehavior: Flickable.StopAtBounds
+            Column {
+                id: locationContent; width: locationScroll.width; spacing: 12
+                Text {
+                    width: parent.width; wrapMode: Text.WordWrap; color: "#c6dbe8"; font.pixelSize: 13
+                    text: mapViewport.horizonActive ? Math.abs(mapViewport.observerLatitude).toFixed(2) + "° " + (mapViewport.observerLatitude >= 0 ? "N" : "S") + "   " + Math.abs(mapViewport.observerLongitude * 360 - 180).toFixed(2) + "° " + (mapViewport.observerLongitude >= 0.5 ? "E" : "W") : "Click a location on the map or globe to see its horizon and daily events."
+                }
+                Rectangle {
+                    visible: !!window.homeCity.name; width: parent.width; height: 32; radius: 5; color: "#203747"
+                    TimeAction {
+                        anchors.fill: parent; label: "Use home city"; description: "Select your saved home city as My Location"
+                        onTriggered: { mapViewport.setObserver(window.homeCity.longitude, window.homeCity.latitude); globe.centerOn(window.homeCity.longitude, window.homeCity.latitude); locationPanel.refresh() }
+                    }
+                }
+                Column {
+                    width: parent.width; spacing: 6; visible: mapViewport.horizonActive
+                    Text {
+                        width: parent.width; wrapMode: Text.WordWrap; color: "#a9c3d5"; font.pixelSize: 12
+                        text: (locationPanel.info.date || "") + " · " + (locationPanel.info.zone || "") + "\nAll times use the computer's time zone, not the selected location's."
+                    }
+                    Text { width: parent.width; wrapMode: Text.WordWrap; color: "#ffcc8b"; text: locationPanel.info.error || ""; visible: text.length > 0 }
+                    Text {
+                        width: parent.width; wrapMode: Text.WordWrap; color: "#e1edf5"; font.pixelSize: 14
+                        text: (locationPanel.info.skyCondition || "") + " · Daylight duration " + (locationPanel.info.daylight || "—")
+                    }
+                    Text { width: parent.width; wrapMode: Text.WordWrap; color: "#a9c3d5"; font.pixelSize: 12; text: "First rise / set on this date · current status below" }
+                    Row {
+                        width: parent.width
+                        Text { width: parent.width * .40; text: "Body / altitude"; color: "#a9c3d5"; font.pixelSize: 12 }
+                        Text { width: parent.width * .30; text: "Rise"; color: "#a9c3d5"; font.pixelSize: 12 }
+                        Text { width: parent.width * .30; text: "Set"; color: "#a9c3d5"; font.pixelSize: 12 }
+                    }
+                    Repeater {
+                        model: locationPanel.info.bodies || []
+                        delegate: Column {
+                            required property var modelData
+                            width: locationContent.width; spacing: 4
+                            Row {
+                                width: parent.width
+                                Text { width: parent.width * .40; text: modelData.name + "  " + modelData.altitude; font.pixelSize: 13; color: "#e1edf5" }
+                                Text { width: parent.width * .30; text: modelData.rise; font.pixelSize: 13; color: "#e1edf5" }
+                                Text { width: parent.width * .30; text: modelData.set; font.pixelSize: 13; color: "#e1edf5" }
+                            }
+                            Text { width: parent.width; wrapMode: Text.WordWrap; text: modelData.status; font.pixelSize: 12; color: modelData.above ? "#a8dbba" : "#a9b9c8" }
+                            Rectangle { width: parent.width; height: 1; color: "#2a3d4c" }
+                        }
+                    }
+                    Text { text: "Twilight · dawn / dusk"; font.pixelSize: 14; color: "#e1edf5" }
+                    Repeater {
+                        model: locationPanel.info.twilight || []
+                        delegate: Row {
+                            required property var modelData
+                            width: locationContent.width
+                            Text { width: parent.width * .40; text: modelData.name; color: "#c6dbe8"; font.pixelSize: 12 }
+                            Text { width: parent.width * .30; text: modelData.dawn; color: "#c6dbe8"; font.pixelSize: 12 }
+                            Text { width: parent.width * .30; text: modelData.dusk; color: "#c6dbe8"; font.pixelSize: 12 }
+                        }
+                    }
+                    Text {
+                        width: parent.width; wrapMode: Text.WordWrap; color: "#a9c3d5"; font.pixelSize: 12
+                        text: "None = no rise or set on this date (including polar day/night). Above horizon describes position, not guaranteed visibility. Daylight, twilight, glare near the Sun, weather and terrain can hide planets. Altitudes include standard refraction; terrain and observer elevation are not modeled. My Horizon uses a geometric boundary."
+                    }
+                    Text { width: parent.width; wrapMode: Text.WordWrap; color: "#a9c3d5"; font.pixelSize: 11; text: "Status at " + (locationPanel.info.instant || "") }
+                }
+            }
+        }
+        Rectangle { anchors.right: parent.right; anchors.rightMargin: 3; y: locationScroll.y + locationScroll.visibleArea.yPosition * locationScroll.height; width: 3; height: Math.max(16, locationScroll.visibleArea.heightRatio * locationScroll.height); radius: 2; color: "#6f91a9"; visible: locationScroll.contentHeight > locationScroll.height }
+    }
+    Rectangle {
+        id: timeDialog; objectName: "dateTimeDialog"
+        anchors.fill: parent; z: 110; visible: false; color: "#c0080f18"
+        property bool utc: false
+        property string error: ""
+        function showCalendar() {
+            const fields = sky.datePickerFields(dateField.text, utc)
+            calendarPopup.year = fields.year; calendarPopup.month = fields.month
+            calendarPopup.open()
+        }
+        function apply() {
+            error = sky.selectDateTime(dateField.text, timeField.text, utc)
+            if (!error) window.closeDateTime()
+        }
+        MouseArea { anchors.fill: parent; onClicked: window.closeDateTime(); onWheel: wheel => wheel.accepted = true }
+        Rectangle {
+            anchors.centerIn: parent; width: Math.min(480, window.width - 32); height: 346
+            radius: 10; color: "#142330"; border.color: "#59788d"
+            MouseArea { anchors.fill: parent }
+            Text { x: 20; y: 18; text: "Go to date and time"; font.pixelSize: 20; color: "#e1edf5" }
+            Text { x: 20; y: 54; width: parent.width - 40; text: "24-hour clock · applying pauses live time"; color: "#a9c3d5"; font.pixelSize: 13 }
+            Text { x: 20; y: 86; text: "Date (YYYY-MM-DD)"; color: "#c6dbe8"; font.pixelSize: 13 }
+            Text { x: 248; y: 86; text: "Time (HH:MM:SS)"; color: "#c6dbe8"; font.pixelSize: 13 }
+            Rectangle {
+                x: 20; y: 108; width: 208; height: 38; radius: 5; color: "#080f18"; border.color: dateField.activeFocus ? "#b1d5ed" : "#496779"
+                TextInput {
+                    id: dateField; objectName: "dateInput"; anchors.fill: parent; anchors.margins: 8
+                    font.pixelSize: 16; color: "#e1edf5"; selectByMouse: true; activeFocusOnTab: true; clip: true
+                    anchors.rightMargin: 44
+                    maximumLength: 10; Accessible.name: "Date, YYYY-MM-DD"
+                    KeyNavigation.tab: dateCalendarButton; KeyNavigation.backtab: dateCancel
+                    onTextEdited: timeDialog.error = ""
+                    Keys.onEscapePressed: window.closeDateTime()
+                    onAccepted: timeDialog.apply()
+                }
+            }
+            ToolbarAction {
+                id: dateCalendarButton; objectName: "dateCalendarButton"
+                x: 194; y: 110; width: 32; height: 34; icon: "calendar"
+                description: "Choose a date from the calendar"
+                KeyNavigation.tab: timeField; KeyNavigation.backtab: dateField
+                onTriggered: timeDialog.showCalendar()
+            }
+            Rectangle {
+                x: 248; y: 108; width: parent.width - 268; height: 38; radius: 5; color: "#080f18"; border.color: timeField.activeFocus ? "#b1d5ed" : "#496779"
+                TextInput {
+                    id: timeField; objectName: "timeInput"; anchors.fill: parent; anchors.margins: 8
+                    font.pixelSize: 16; color: "#e1edf5"; selectByMouse: true; activeFocusOnTab: true; clip: true
+                    maximumLength: 8; Accessible.name: "Time, HH:MM:SS"
+                    KeyNavigation.tab: localTimeChoice; KeyNavigation.backtab: dateCalendarButton
+                    onTextEdited: timeDialog.error = ""
+                    Keys.onEscapePressed: window.closeDateTime()
+                    onAccepted: timeDialog.apply()
+                }
+            }
+            Text { x: 20; y: 161; text: "Interpret entered time as:"; color: "#c6dbe8"; font.pixelSize: 13 }
+            TimeAction {
+                id: localTimeChoice; objectName: "localTimeChoice"; x: 20; y: 183; width: 230; height: 34
+                label: (timeDialog.utc ? "○ " : "● ") + "Computer local time"; highlighted: !timeDialog.utc
+                description: "Interpret the entered date and time in the computer's time zone"
+                KeyNavigation.tab: utcTimeChoice; KeyNavigation.backtab: timeField
+                onTriggered: { timeDialog.utc = false; timeDialog.error = "" }
+            }
+            TimeAction {
+                id: utcTimeChoice; objectName: "utcTimeChoice"; x: 260; y: 183; width: 130; height: 34
+                label: (timeDialog.utc ? "● " : "○ ") + "UTC"; highlighted: timeDialog.utc
+                description: "Interpret the entered date and time as UTC"
+                KeyNavigation.tab: dateApply; KeyNavigation.backtab: localTimeChoice
+                onTriggered: { timeDialog.utc = true; timeDialog.error = "" }
+            }
+            Text { x: 20; y: 222; width: parent.width - 40; wrapMode: Text.WordWrap; text: timeDialog.error || ("Local zone: " + sky.dateTimeFields(false).zone + ". Use UTC for repeated or skipped daylight-saving times."); color: timeDialog.error ? "#ffcc8b" : "#a9c3d5"; font.pixelSize: 12 }
+            TimeAction {
+                id: dateApply; objectName: "applyDateTimeButton"; x: 20; y: 294; width: 130; height: 34
+                label: "Apply"; highlighted: true; description: "Apply the selected date and time"
+                KeyNavigation.tab: dateCancel; KeyNavigation.backtab: utcTimeChoice
+                onTriggered: timeDialog.apply()
+            }
+            TimeAction {
+                id: dateCancel; x: parent.width - 110; y: 294; width: 90; height: 34
+                label: "Cancel"; description: "Close without applying a different time"
+                KeyNavigation.tab: dateField; KeyNavigation.backtab: dateApply
+                onTriggered: window.closeDateTime()
+            }
+        }
+        Shortcut { sequence: "Escape"; enabled: timeDialog.visible && !calendarPopup.visible; onActivated: window.closeDateTime() }
+    }
+    Controls.Popup {
+        id: calendarPopup; objectName: "dateCalendarPopup"
+        parent: window.contentItem
+        x: (window.width - width) / 2; y: (window.height - height) / 2
+        width: 360; height: 370; padding: 0; modal: true; focus: true; z: 120
+        closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutside
+        property int year: 2026
+        property int month: 0
+        function shiftMonth(delta) {
+            const total = year * 12 + month + delta
+            const nextYear = Math.floor(total / 12)
+            if (nextYear < 1 || nextYear > 9999) return
+            year = nextYear; month = total % 12
+        }
+        function choose(iso) { dateField.text = iso; timeDialog.error = ""; close() }
+        onOpened: calendarMonth.forceActiveFocus()
+        onClosed: if (timeDialog.visible) dateCalendarButton.forceActiveFocus()
+        background: Rectangle { radius: 8; color: "#142330"; border.color: "#59788d" }
+        contentItem: Item {
+            TimeAction {
+                objectName: "calendarPreviousMonth"; x: 10; y: 14; width: 30; height: 32; direction: -1
+                description: "Previous month"; enabled: calendarPopup.year > 1 || calendarPopup.month > 0
+                onTriggered: calendarPopup.shiftMonth(-1)
+            }
+            Controls.ComboBox {
+                id: calendarMonth; objectName: "calendarMonthChoice"; x: 46; y: 12; width: 148; height: 36
+                model: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+                currentIndex: calendarPopup.month
+                onActivated: calendarPopup.month = currentIndex
+                font.pixelSize: 13; Accessible.name: "Calendar month"
+                palette.dark: "#a9c3d5"; palette.button: "#203747"; palette.buttonText: "#e1edf5"; palette.text: "#e1edf5"; palette.window: "#142330"; palette.base: "#142330"; palette.highlight: "#31546b"; palette.highlightedText: "#e1edf5"
+                background: Rectangle { radius: 4; color: "#203747"; border.color: calendarMonth.activeFocus ? "#b1d5ed" : "#496779" }
+            }
+            Controls.SpinBox {
+                id: calendarYear; objectName: "calendarYearChoice"; x: 202; y: 12; width: 112; height: 36
+                from: 1; to: 9999; editable: true; value: calendarPopup.year
+                onValueModified: calendarPopup.year = value
+                textFromValue: function(value, locale) { return value.toString() }
+                valueFromText: function(text, locale) { return Number(text) }
+                font.pixelSize: 13; Accessible.name: "Calendar year"
+                palette.button: "#203747"; palette.buttonText: "#e1edf5"; palette.text: "#e1edf5"; palette.base: "#142330"; palette.mid: "#496779"
+                background: Rectangle { radius: 4; color: "#203747"; border.color: calendarYear.activeFocus ? "#b1d5ed" : "#496779" }
+            }
+            TimeAction {
+                objectName: "calendarNextMonth"; x: 320; y: 14; width: 30; height: 32; direction: 1
+                description: "Next month"; enabled: calendarPopup.year < 9999 || calendarPopup.month < 11
+                onTriggered: calendarPopup.shiftMonth(1)
+            }
+            Controls.DayOfWeekRow {
+                x: 16; y: 60; width: 328; height: 28; spacing: 3; locale: calendarDays.locale
+                delegate: Text {
+                    required property string shortName
+                    text: shortName; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 12; color: "#a9c3d5"
+                }
+            }
+            Controls.MonthGrid {
+                id: calendarDays; objectName: "calendarDays"
+                x: 16; y: 92; width: 328; height: 216; spacing: 3
+                year: calendarPopup.year; month: calendarPopup.month
+                delegate: TimeAction {
+                    required property var model
+                    readonly property string isoDate: String(model.year).padStart(4, "0") + "-" + String(model.month + 1).padStart(2, "0") + "-" + String(model.day).padStart(2, "0")
+                    objectName: "calendarDay" + isoDate
+                    width: (calendarDays.width - 18) / 7; height: (calendarDays.height - 15) / 6
+                    enabled: model.year >= 1 && model.year <= 9999
+                    opacity: model.month === calendarPopup.month ? 1 : .45
+                    label: String(model.day); description: "Choose " + isoDate
+                    highlighted: isoDate === dateField.text
+                    Rectangle { anchors.fill: parent; anchors.margins: 1; radius: 4; z: -1; color: parent.highlighted ? "#31546b" : "transparent" }
+                    onTriggered: calendarPopup.choose(isoDate)
+                }
+            }
+            Text { x: 16; y: 334; text: "Select a day to fill the date"; color: "#a9c3d5"; font.pixelSize: 12 }
+            TimeAction { x: 274; y: 324; width: 70; height: 32; label: "Close"; description: "Close calendar without selecting a day"; onTriggered: calendarPopup.close() }
+        }
+    }
+    Shortcut {
+        sequence: "Ctrl+S"
+        enabled: !window.exporting && !timeDialog.visible && !cityDialog.visible && !exportDialog.visible && !exportFileDialog.visible
+        onActivated: window.openExport()
+    }
+    Rectangle {
+        id: exportDialog; objectName: "screenshotDialog"; anchors.fill: parent; z: 115; visible: false; color: "#c0080f18"
+        property string error: ""
+        MouseArea { anchors.fill: parent; onClicked: window.closeExport(); onWheel: wheel => wheel.accepted = true }
+        Rectangle {
+            anchors.centerIn: parent; width: Math.min(500, window.width - 32); height: 258; radius: 10; color: "#142330"; border.color: "#59788d"
+            MouseArea { anchors.fill: parent }
+            Text { x: 20; y: 18; text: "Save image"; font.pixelSize: 20; color: "#e1edf5" }
+            Text { x: 20; y: 54; width: parent.width - 40; wrapMode: Text.WordWrap; text: "Export the current map or globe without controls or panels. Time is paused; use Now to return to live time."; color: "#a9c3d5"; font.pixelSize: 13 }
+            Text { x: 20; y: 110; width: parent.width - 40; wrapMode: Text.WordWrap; text: exportDialog.error || "PNG is lossless; JPEG is also available. Only small, subdued image credits appear beneath the view."; color: exportDialog.error ? "#ffcc8b" : "#a9c3d5"; font.pixelSize: 13 }
+            TimeAction { id: exportChoose; objectName: "chooseScreenshotFileButton"; x: 20; y: 206; width: 180; height: 34; label: "Choose file…"; highlighted: true; description: "Choose a filename and save the exported image"
+                KeyNavigation.tab: exportCancel; KeyNavigation.backtab: exportCancel
+                onTriggered: { exportFileDialog.selectedFile = sky.screenshotUrl(); exportFileDialog.open() }
+            }
+            TimeAction { id: exportCancel; x: parent.width - 110; y: 206; width: 90; height: 34; label: "Cancel"; description: "Cancel image export"
+                KeyNavigation.tab: exportChoose; KeyNavigation.backtab: exportChoose
+                onTriggered: window.closeExport()
+            }
+        }
+        Shortcut { sequence: "Escape"; enabled: exportDialog.visible && !exportFileDialog.visible; onActivated: window.closeExport() }
+    }
+    FileDialog {
+        id: exportFileDialog; objectName: "exportFileDialog"
+        title: "Save Earth & Sky image"; fileMode: FileDialog.SaveFile
+        nameFilters: ["PNG image (*.png)", "JPEG image (*.jpg *.jpeg)"]
+        defaultSuffix: selectedNameFilter.index === 1 ? "jpg" : "png"
+        onAccepted: window.performExport(selectedFile)
+        onRejected: exportChoose.forceActiveFocus()
+    }
+    Item {
+        anchors.fill: parent; z: 114; visible: window.exporting; focus: visible
+        onVisibleChanged: if (visible) forceActiveFocus()
+        Keys.onPressed: event => event.accepted = true
+        MouseArea { anchors.fill: parent; onWheel: wheel => wheel.accepted = true }
+    }
+    Timer {
+        interval: 20000; running: window.exporting
+        onTriggered: {
+            ++window.exportGeneration; window.exporting = false
+            exportDialog.error = "The capture did not finish. Keep the app window visible and try again."
+            exportDialog.visible = true; exportChoose.forceActiveFocus()
+        }
+    }
+    Timer { id: exportToastTimer; interval: 5000; onTriggered: window.exportMessage = "" }
+    Rectangle {
+        anchors.horizontalCenter: parent.horizontalCenter; y: 48; z: 120
+        visible: window.exportMessage.length > 0
+        width: Math.min(540, window.width - 32); height: exportToast.implicitHeight + 24
+        radius: 6; color: "#142330"; border.color: "#59788d"
+        Text { id: exportToast; x: 12; y: 12; width: parent.width - 24; wrapMode: Text.WrapAnywhere; text: window.exportMessage; font.pixelSize: 13; color: "#d5e3ee" }
     }
     component VisibilityToggle: Item {
         id: control
@@ -523,7 +943,7 @@ Window {
             anchors.verticalCenter: parent.verticalCenter
             text: control.label
             font.family: "Segoe UI"
-            font.pixelSize: 11
+            font.pixelSize: 12
             color: control.checked ? "#aab9c4" : "#728390"
         }
         MouseArea {
@@ -551,12 +971,12 @@ Window {
         height: 32
         activeFocusOnTab: true
         Accessible.role: Accessible.Button
-        Accessible.name: description
-        Accessible.description: description + ". Escape stops animation."
+        Accessible.name: label || description
+        Accessible.description: description
         Accessible.onPressAction: triggered()
         Keys.onSpacePressed: event => { triggered(); event.accepted = true }
         Keys.onReturnPressed: event => { triggered(); event.accepted = true }
-        Keys.onEscapePressed: event => { if (intervalMenu.visible) intervalMenu.visible = false; else sky.stopAnimation(); event.accepted = true }
+        Keys.onEscapePressed: event => { if (calendarPopup.visible) calendarPopup.close(); else if (exportDialog.visible) window.closeExport(); else if (timeDialog.visible) window.closeDateTime(); else if (intervalMenu.visible) intervalMenu.visible = false; else sky.stopAnimation(); event.accepted = true }
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
@@ -571,7 +991,7 @@ Window {
             visible: action.direction === 0
             text: action.label
             font.family: "Segoe UI"
-            font.pixelSize: 11
+            font.pixelSize: 12
             color: action.highlighted ? "#d1e0e9" : "#99adbc"
         }
         Canvas {
@@ -634,7 +1054,7 @@ Window {
         Rectangle {
             id: hintBubble
             parent: window.contentItem
-            visible: action.hintReady && hit.containsMouse
+            visible: action.hintReady && hit.containsMouse && action.visible && !timeDialog.visible && !cityDialog.visible && !exportDialog.visible
             z: 100
             width: Math.min(hint.implicitWidth + 18, window.width - 16)
             height: hint.implicitHeight + 12
@@ -650,8 +1070,8 @@ Window {
                 wrapMode: Text.WordWrap
                 text: action.description
                 font.family: "Segoe UI"
-                font.pixelSize: 10
-                color: "#c5d2dc"
+                font.pixelSize: 12
+                color: "#d5e3ee"
             }
         }
     }
@@ -723,6 +1143,12 @@ Window {
                         width: 152; height: 27; radius: 4
                         color: choiceHit.containsMouse ? "#2a4152" : sky.combinedIndex === index ? "#203747" : "transparent"
                         Text { anchors.verticalCenter: parent.verticalCenter; x: 10; text: (sky.combinedIndex === index ? "\u2713  " : "     ") + modelData; font.family: "Segoe UI"; font.pixelSize: 11; color: "#c1d2df" }
+                        activeFocusOnTab: true
+                        Accessible.role: Accessible.Button
+                        Accessible.name: "Set interval to " + modelData
+                        Keys.onReturnPressed: { sky.selectCombinedInterval(index); intervalMenu.visible = false }
+                        Keys.onSpacePressed: { sky.selectCombinedInterval(index); intervalMenu.visible = false }
+                        border.width: activeFocus ? 1 : 0; border.color: "#b1d5ed"
                         MouseArea { id: choiceHit; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { sky.selectCombinedInterval(index); intervalMenu.visible = false } }
                     }
                 }
@@ -740,7 +1166,7 @@ Window {
         readonly property int verticalPadding: 5
         readonly property bool singleRow: width >= timeControls.width + togglesRow.width + sideMargin * 2 + 24
         readonly property real controlsBottom: Math.max(timeControls.y + timeControls.height, togglesRow.y + togglesRow.height)
-        readonly property real infoBottom: coordinatesLabel.visible ? coordinatesLabel.y + coordinatesLabel.implicitHeight : displayedTimeLabel.y + displayedTimeLabel.implicitHeight
+        readonly property real infoBottom: coordinatesLabel.visible ? coordinatesLabel.y + coordinatesLabel.implicitHeight : timeReadout.y + timeReadout.height
         height: Math.ceil(attribution.y + attribution.implicitHeight + 7)
         color: "#0b131d"
         Rectangle { width: parent.width; height: 1; color: "#1b2936" }
@@ -787,7 +1213,7 @@ Window {
             anchors.left: parent.left
             anchors.leftMargin: footer.sideMargin
             y: footer.verticalPadding
-            height: 65
+            height: 84
             spacing: 18
             Item {
                 width: 272; height: 65
@@ -830,6 +1256,8 @@ Window {
                         Keys.onEscapePressed: event => { intervalMenu.visible = false; event.accepted = true }
                         Keys.onSpacePressed: intervalMenu.visible = !intervalMenu.visible
                         Keys.onReturnPressed: intervalMenu.visible = !intervalMenu.visible
+                        Keys.onDownPressed: sky.selectCombinedInterval(Math.min(10, sky.combinedIndex + 1))
+                        Keys.onUpPressed: sky.selectCombinedInterval(Math.max(0, sky.combinedIndex - 1))
                     }
                     DirectionGlobeButton { direction: 1 }
                 }
@@ -873,37 +1301,67 @@ Window {
                     onTriggered: { mapViewport.fitMap(); globe.fitView() }
                 }
             }
-            Rectangle {
-                y: 32; width: 74; height: 32; radius: 6
-                color: "#121f2b"; border.color: sky.live ? "#506d80" : "#2a3d4c"
-                TimeAction {
-                    objectName: "resetButton"
-                    anchors.fill: parent
-                    label: "\u21bb  Reset"
-                    description: "Reset to the current time and home city, and stop playback"
-                    highlighted: sky.live
-                    onTriggered: { sky.goToNow(); window.centerHome(); intervalMenu.visible = false }
+            Item {
+                width: Math.max(96, Math.min(180, resetDestinationMetrics.width + 8)); height: 84
+                TextMetrics { id: resetDestinationMetrics; text: resetDestinationLabel.text; font.family: "Segoe UI"; font.pixelSize: 10 }
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 32; width: 74; height: 32; radius: 6
+                    color: "#121f2b"; border.color: sky.live ? "#506d80" : "#2a3d4c"
+                    TimeAction {
+                        objectName: "resetButton"; anchors.fill: parent; label: "\u21bb  Reset"
+                        description: "Return to live time and " + (window.homeCity.name ? window.homeCity.name : "the full view") + "; stop playback"
+                        highlighted: sky.live
+                        onTriggered: { sky.goToNow(); window.centerHome(); intervalMenu.visible = false }
+                    }
+                }
+                Text {
+                    id: resetDestinationLabel; objectName: "resetDestinationLabel"
+                    x: 0; y: 68; width: parent.width
+                    text: window.homeCity.name || "Full view"
+                    horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+                    font.family: "Segoe UI"; font.pixelSize: 10; color: "#8197aa"
+                    Accessible.name: "Reset destination: " + text
                 }
             }
         }
-        Text {
-            id: displayedTimeLabel
-            objectName: "displayedTimeLabel"
+        Row {
+            id: timeReadout
             anchors.horizontalCenter: parent.horizontalCenter
-            y: footer.controlsBottom + 8
-            text: sky.displayedTime
-            font.family: "Segoe UI"
-            font.pixelSize: 15
-            font.weight: Font.DemiBold
-            color: "#d5e3ee"
+            y: footer.controlsBottom + 8; height: 34; spacing: 10
+            Text {
+                objectName: "timeStatusLabel"; anchors.verticalCenter: parent.verticalCenter
+                text: sky.animationDirection !== 0 ? "PLAYING" : sky.live ? "LIVE" : "SELECTED"
+                color: sky.live ? "#a8dbba" : "#c6dbe8"; font.pixelSize: 12; font.weight: Font.DemiBold
+            }
+            Text {
+                id: displayedTimeLabel; objectName: "displayedTimeLabel"; anchors.verticalCenter: parent.verticalCenter
+                text: sky.displayedTime; font.family: "Segoe UI"; font.pixelSize: 14; font.weight: Font.DemiBold; color: "#e1edf5"
+            }
+            Rectangle {
+                width: 116; height: 34; radius: 5; color: "#203747"; border.color: "#496779"
+                TimeAction {
+                    id: dateTimeButton; objectName: "dateTimeButton"; anchors.fill: parent
+                    label: "Date / time…"; description: "Choose a date and time (Ctrl+T)"
+                    onTriggered: window.openDateTime()
+                }
+            }
+            Rectangle {
+                width: 54; height: 34; radius: 5; color: "#121f2b"; border.color: "#496779"
+                TimeAction {
+                    objectName: "nowButton"; anchors.fill: parent; label: "Now"; highlighted: sky.live
+                    description: "Return to live time without resetting the location or zoom"
+                    onTriggered: sky.goToNow()
+                }
+            }
         }
         Text {
             id: coordinatesLabel
             objectName: "coordinatesLabel"
             visible: mapViewport.horizonActive
             anchors.horizontalCenter: parent.horizontalCenter
-            y: displayedTimeLabel.y + displayedTimeLabel.implicitHeight + 3
-            text: "My Horizon  ·  Latitude " + Math.abs(mapViewport.observerLatitude).toFixed(2) + "° " + (mapViewport.observerLatitude >= 0 ? "N" : "S") + "  ·  Longitude " + Math.abs(mapViewport.observerLongitude * 360 - 180).toFixed(2) + "° " + (mapViewport.observerLongitude >= 0.5 ? "E" : "W")
+            y: timeReadout.y + timeReadout.height + 3
+            text: "My Location / Horizon  ·  Latitude " + Math.abs(mapViewport.observerLatitude).toFixed(2) + "° " + (mapViewport.observerLatitude >= 0 ? "N" : "S") + "  ·  Longitude " + Math.abs(mapViewport.observerLongitude * 360 - 180).toFixed(2) + "° " + (mapViewport.observerLongitude >= 0.5 ? "E" : "W")
             font.family: "Segoe UI"; font.pixelSize: 11; color: "#99bdce"
         }
         Text {

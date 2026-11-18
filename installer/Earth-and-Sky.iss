@@ -1,5 +1,5 @@
 #define AppName "Earth & Sky"
-#define AppVersion "0.1.1"
+#define AppVersion "1.0.0"
 #define PackageRoot "..\outputs\Earth-and-Sky"
 #ifndef InstallerAppId
   #define InstallerAppId "E4C8B727-1050-4B93-BE33-F7281E60A73B"
