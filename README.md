@@ -6,7 +6,15 @@ An offline desktop app for exploring Earth and the sky, with flat-map and globe 
 
 Earth & Sky displays a high-resolution world map in a single window. The daylight side stays bright, the night side is shaded, and a smooth transition shows twilight. A subtle line marks the approximate sunrise/sunset boundary. Sun, Moon, and planet markers show the points on Earth directly beneath them. The Moon uses a real photograph shaded to its phase at the displayed time. All 88 constellations are available as individually positioned principal stars joined in conventional patterns, with a separate zodiac-only switch and a faint ecliptic tracing the Solar System’s reference plane.
 
-Screenshots below show **Earth & Sky 1.0.0**, including the location panel.
+### Flat map and globe
+
+![Earth & Sky flat map showing day and night across the world](outputs/Earth-and-Sky/screenshots/flat-map-overview.png)
+
+![Earth & Sky globe showing the sunlit Earth and nearby planet markers](outputs/Earth-and-Sky/screenshots/globe-overview.png)
+
+### My Location and horizon
+
+These views show the selected location, its horizon, and the location information panel.
 
 ![Earth & Sky 1.0 — flat map and location information](outputs/Earth-and-Sky/screenshots/flat-map-1.0.png)
 
